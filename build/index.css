@@ -4,7 +4,12 @@
     color: #264653;
     text-align: center;
     font-family: 'Russo One', sans-serif;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transform-origin: 50% 50%;
 }
+
 body{
     background-color:#f4a3616f;
     text-align: center;
