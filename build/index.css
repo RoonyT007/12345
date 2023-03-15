@@ -33,22 +33,30 @@ h3{
     font-size: 20px;
  }
 @media screen and (max-width:800px){
+    
     h2{
         font-size: 26px;
+        font-weight: 300;
+        
     }
     h3{
        font-size:22px ;
+       font-weight: 300;
     }
     h4{
         font-size: 20px;
+        font-weight: 300;
     }
     h5{
         font-size: 16px;
+        font-weight: 300;
     }
     h6{
         font-size: 14px;
+        font-weight: 300;
     }
     p{
         font-size: 16px;
+        font-weight: 300;
     }
 }

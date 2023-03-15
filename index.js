@@ -1,3 +1,5 @@
+
+
 const express=require('express');
 const path=require('path');
 const io=require('socket.io');
@@ -7,6 +9,7 @@ const exp = require('constants');
 let game={};
 let players={};
 let rooms=[];
+let friendrooms=[];
 const app=express();
 app.use(cors());
 app.use(express.static(path.join(__dirname,'build')));
@@ -22,29 +25,19 @@ function createRoom(roomId){
     game[roomId]=[];
 }
 
-
-Socket.on('connect',(socket)=>{
-
-    Socket.emit('total-player-data',Socket.sockets.sockets.size);
-    console.log(socket.id);
-  let player=new Player(socket.id);
-  players[socket.id]=player;
-  socket.emit('player-data',player);
-    socket.on('need-room',(name,img)=>{
-        player.img=img;
-        player.name=name[0].toUpperCase()+name.slice(1).toLowerCase();
-                if(rooms.length===0){
-            createRoom(player.id+"room");
-            joinRoom(socket,player);
-        }
-        else{
-            joinRoom(socket,player);
+function createFriendRoom(roomId,player){
+    if(!player.room){
+    let uni=roomId.slice(0,6)+friendrooms.length;
+    player.friend_room.room=uni;
+    player.room=roomId;
+    let obj={};
+    obj[uni]=roomId;
+    friendrooms.push(obj);
+    game[roomId]=[];
     }
-    if(player.room.length===0){
-        createRoom(player.id+"room");
-        joinRoom(socket,player);
-    }      
-   Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach((el,index)=>{
+}
+function datasharing(player,socket){
+    Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach((el,index)=>{
         if(Socket.sockets.adapter.rooms.get(player.room).size===1){
            
                 players[el].wait=1;
@@ -77,8 +70,74 @@ Socket.on('connect',(socket)=>{
      p2.opponent.img=p1.img;
      socket.emit('player-data',player);
     }
+}
+
+Socket.on('connect',(socket)=>{
+    Socket.emit('total-player-data',Socket.sockets.sockets.size);
+  let player=new Player(socket.id);
+  players[socket.id]=player;
+  socket.emit('player-data',player);
+  socket.on('create-friend-room',(name,img)=>{
+    player.friend_room.need=true;
+    player.img=img;
+    player.name=name[0].toUpperCase()+name.slice(1).toLowerCase();
     
+    createFriendRoom(player.id+"room",player);
+    joinRoom(socket,player);
+    datasharing(player,socket);
+  })
+  socket.on('join-friend-room',(name,img,roomIdCode)=>{
+    player.img=img;
+    player.name=name[0].toUpperCase()+name.slice(1).toLowerCase();
+    friendrooms.forEach(el=>{
+        if(Object.keys(el)[0]===roomIdCode){
+            player.room=Object.values(el)[0];
+            socket.join(Object.values(el)[0]);
+            datasharing(player,socket);
+        }
+    })
+   
     
+  })
+    socket.on('need-room',(name,img)=>{
+
+        player.img=img;
+        player.name=name[0].toUpperCase()+name.slice(1).toLowerCase();
+                if(rooms.length===0){
+    
+            createRoom(player.id+"room");
+            joinRoom(socket,player);
+        }
+        else{
+            joinRoom(socket,player);
+    }
+    if(player.room.length===0){
+        createRoom(player.id+"room");
+        joinRoom(socket,player);
+    }      
+
+   datasharing(player,socket);
+   console.log(players);
+    
+    })
+    socket.on("cancelMatch",()=>{
+        if(player.friend_room.need!==true){
+            socket.leave(player.room);
+       
+        delete game[rooms[rooms.indexOf(player.room)]];
+        rooms.indexOf(player.room)!=-1&&rooms.splice(rooms.indexOf(player.room),1);
+        player.room="";
+        }
+        else if(player.friend_room.need===true){
+            console.log("cancel room match")
+            socket.leave(player.room);
+            delete game[rooms[rooms.indexOf(player.room)]];
+            friendrooms.map(e=>Object.values(e)[0]).indexOf(player.room)!=-1&&friendrooms.splice(friendrooms.map(e=>Object.values(e)[0]).indexOf(player.room),1);
+            player.room="";
+            player.friend_room.need=false;
+            player.friend_room.room="";
+        }
+        
     })
     socket.on('tossed',()=>{
         let headortails=Math.random()<=0.49?"heads":"tails"
@@ -125,7 +184,6 @@ Socket.on('connect',(socket)=>{
             
         })
     socket.on('toss-completed',()=>{
-        console.log(1);
             Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach((el)=>{
                 players[el].toss.coin=true;
                     Socket.sockets.in(el).emit('toss-completed',players[el]);
@@ -237,6 +295,7 @@ socket.on("disconnect",()=>{
     
     delete game[rooms[rooms.indexOf(player.room)]];
     rooms.indexOf(player.room)!=-1&&rooms.splice(rooms.indexOf(player.room),1);
+    friendrooms.map(e=>Object.values(e)[0]).indexOf(player.room)!=-1&&friendrooms.splice(friendrooms.map(e=>Object.values(e)[0]).indexOf(player.room),1);
     (Socket.sockets.adapter.rooms.get(player.room)!=undefined)
     &&Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach(id=>{
         Socket.socketsLeave(player.room);
@@ -249,9 +308,9 @@ socket.on("disconnect",()=>{
 })
 
 socket.on("disconnect-player",()=>{
-    console.log("disconnect player");
     delete game[rooms[rooms.indexOf(player.room)]];
     rooms.indexOf(player.room)!=-1&&rooms.splice(rooms.indexOf(player.room),1);
+    friendrooms.map(e=>Object.values(e)[0]).indexOf(player.room)!=-1&&friendrooms.splice(friendrooms.map(e=>Object.values(e)[0]).indexOf(player.room),1);
     Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach(id=>{
         Socket.sockets.in(id).emit("Opponent got disconnect",player.id);
         Socket.socketsLeave(player.room);
@@ -269,6 +328,7 @@ socket.on("disconnect-player",()=>{
 
 //JOiN A RANDOM ROOM FUNCTION
 function joinRoom(socket,player){
+    if(player.friend_room.need===false){
     for(i=0;i<rooms.length;i++){
         if(game[rooms[i]].length<=1){
             socket.join(rooms[i]);
@@ -277,6 +337,11 @@ function joinRoom(socket,player){
             break;
            }
 }
+    }
+    else if (player.friend_room.need===true){
+        socket.join(player.room);
+        game[player.room].push(player.id);
+    }
 }
 
 function runSimulator(p1,p2){

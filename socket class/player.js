@@ -1,6 +1,7 @@
 class Player{
     constructor(id){
         this.id=id;
+        this.friend_room={need:false,room:""};
         this.name="";
         this.img="";
         this.opponent={name:"",img:""};
