@@ -37,11 +37,12 @@ function createFriendRoom(roomId,player){
     }
 }
 function datasharing(player,socket){
+    var randomTossElgibility=Math.ceil(Math.random()*2)===1?"first":"second";
+    console.log(player.name);
     Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach((el,index)=>{
         if(Socket.sockets.adapter.rooms.get(player.room).size===1){
            
                 players[el].wait=1;
-                players[el].tossElgibility=1
             
             Socket.sockets.in(el).emit("first-data",players[el]);
         }
@@ -49,12 +50,12 @@ function datasharing(player,socket){
         {
             if(index===0){
                     players[el].wait=0;
-                    players[el].tossElgibility=1
+                    players[el].tossElgibility=(randomTossElgibility==="first"?1:0);
                 Socket.sockets.in(el).emit("first-data",players[el]);
             }
             else if(index===1){
                     players[el].wait=0;
-                    players[el].tossElgibility=0
+                    players[el].tossElgibility=(randomTossElgibility==="second"?1:0);
                 Socket.sockets.in(el).emit("first-data",players[el]);
             }
             
@@ -100,7 +101,7 @@ Socket.on('connect',(socket)=>{
     
   })
     socket.on('need-room',(name,img)=>{
-
+      
         player.img=img;
         player.name=name[0].toUpperCase()+name.slice(1).toLowerCase();
                 if(rooms.length===0){
@@ -117,7 +118,6 @@ Socket.on('connect',(socket)=>{
     }      
 
    datasharing(player,socket);
-   console.log(players);
     
     })
     socket.on("cancelMatch",()=>{
@@ -129,7 +129,6 @@ Socket.on('connect',(socket)=>{
         player.room="";
         }
         else if(player.friend_room.need===true){
-            console.log("cancel room match")
             socket.leave(player.room);
             delete game[rooms[rooms.indexOf(player.room)]];
             friendrooms.map(e=>Object.values(e)[0]).indexOf(player.room)!=-1&&friendrooms.splice(friendrooms.map(e=>Object.values(e)[0]).indexOf(player.room),1);
@@ -141,17 +140,17 @@ Socket.on('connect',(socket)=>{
     })
     socket.on('tossed',()=>{
         let headortails=Math.random()<=0.49?"heads":"tails"
-        Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach((el)=>{
+        Socket.sockets.adapter.rooms.get(player.room)!=undefined &&Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach((el)=>{
             players[el].toss.tossed=true;
             players[el].toss.headortails=headortails;
                 Socket.sockets.in(el).emit("tossed",players[el]);
             }
         )
+    
     })
     
     socket.on('headortails',(data)=>{
-        
-            Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach((el,index)=>{
+       Socket.sockets.adapter.rooms.get(player.room)!=undefined && Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach((el,index)=>{
                 if(player.toss.headortails===data){
                     
                     if(players[el].id===player.id){
@@ -184,13 +183,13 @@ Socket.on('connect',(socket)=>{
             
         })
     socket.on('toss-completed',()=>{
-            Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach((el)=>{
+        Socket.sockets.adapter.rooms.get(player.room)!=undefined && Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach((el)=>{
                 players[el].toss.coin=true;
                     Socket.sockets.in(el).emit('toss-completed',players[el]);
                 })
         })
     socket.on("batorbowl",(data)=>{
-        Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach((el,index)=>{
+        Socket.sockets.adapter.rooms.get(player.room)!=undefined && Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach((el,index)=>{
             if(socket.id===el){
                 if(data==="Bat"){
                     players[el].toss.choose=data;
@@ -296,8 +295,7 @@ socket.on("disconnect",()=>{
     delete game[rooms[rooms.indexOf(player.room)]];
     rooms.indexOf(player.room)!=-1&&rooms.splice(rooms.indexOf(player.room),1);
     friendrooms.map(e=>Object.values(e)[0]).indexOf(player.room)!=-1&&friendrooms.splice(friendrooms.map(e=>Object.values(e)[0]).indexOf(player.room),1);
-    (Socket.sockets.adapter.rooms.get(player.room)!=undefined)
-    &&Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach(id=>{
+    Socket.sockets.adapter.rooms.get(player.room)!=undefined &&Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach(id=>{
         Socket.socketsLeave(player.room);
         Socket.sockets.in(id).emit("Opponent got disconnect");
         Socket.sockets.in(id).disconnectSockets();
@@ -311,7 +309,7 @@ socket.on("disconnect-player",()=>{
     delete game[rooms[rooms.indexOf(player.room)]];
     rooms.indexOf(player.room)!=-1&&rooms.splice(rooms.indexOf(player.room),1);
     friendrooms.map(e=>Object.values(e)[0]).indexOf(player.room)!=-1&&friendrooms.splice(friendrooms.map(e=>Object.values(e)[0]).indexOf(player.room),1);
-    Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach(id=>{
+    Socket.sockets.adapter.rooms.get(player.room)!=undefined &&Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach(id=>{
         Socket.sockets.in(id).emit("Opponent got disconnect",player.id);
         Socket.socketsLeave(player.room);
            Socket.sockets.in(id).disconnectSockets();
@@ -321,6 +319,7 @@ socket.on("disconnect-player",()=>{
     })
     
 })
+
 })
 
 
