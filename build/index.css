@@ -8,12 +8,12 @@
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     transform-origin: 50% 50%;
-    scrollbar-width: thin;
+    scrollbar-width:thin;
     scrollbar-color: #264653 #f4a361;
 }
 *::-webkit-scrollbar{
     background-color: #f4a361;
-    width: 8px;
+    width: 1px;
 }
 ::-webkit-scrollbar-thumb {
     background: #264653;

@@ -6,6 +6,15 @@ const io=require('socket.io');
 const cors=require("cors");
 const Player = require('./socket class/player');
 const exp = require('constants');
+const mongodb=require('mongodb').MongoClient;
+const leaderboardroutes=require('./leaderboard');
+
+const today=new Date();
+const custom=new Date(98,1);
+const monthVer=Number(""+today.getFullYear()+(today.getMonth()/2));
+const firstDay=new Date(today.getFullYear(),today.getMonth(),today.getDate()+1-today.getDay())
+const lastDay=new Date(today.getFullYear(),firstDay.getMonth(),firstDay.getDate()+6);
+
 let game={};
 let players={};
 let rooms=[];
@@ -18,13 +27,13 @@ app.get('/',(req,res)=>{
 })
 const server=app.listen(4000);
 
+app.use('/leaderboard',leaderboardroutes);
 const Socket=new io.Server(server,{cors:{ origin:"*"}});
 
 function createRoom(roomId){
     rooms.push(roomId);
     game[roomId]=[];
 }
-
 function createFriendRoom(roomId,player){
     if(!player.room){
     let uni=roomId.slice(0,6)+friendrooms.length;
@@ -38,7 +47,6 @@ function createFriendRoom(roomId,player){
 }
 function datasharing(player,socket){
     var randomTossElgibility=Math.ceil(Math.random()*2)===1?"first":"second";
-    console.log(player.name);
     Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach((el,index)=>{
         if(Socket.sockets.adapter.rooms.get(player.room).size===1){
            
@@ -73,8 +81,10 @@ function datasharing(player,socket){
     }
 }
 
-Socket.on('connect',(socket)=>{
-    Socket.emit('total-player-data',Socket.sockets.sockets.size);
+Socket.on('connect',async(socket)=>{
+    //Socket.emit('total-player-data',Socket.sockets.sockets.size);
+
+
   let player=new Player(socket.id);
   players[socket.id]=player;
   socket.emit('player-data',player);
@@ -88,10 +98,12 @@ Socket.on('connect',(socket)=>{
     datasharing(player,socket);
   })
   socket.on('join-friend-room',(name,img,roomIdCode)=>{
+    player.friend_room.need=true;
     player.img=img;
     player.name=name[0].toUpperCase()+name.slice(1).toLowerCase();
     friendrooms.forEach(el=>{
         if(Object.keys(el)[0]===roomIdCode){
+            player.friend_room.room=roomIdCode;
             player.room=Object.values(el)[0];
             socket.join(Object.values(el)[0]);
             datasharing(player,socket);
@@ -280,6 +292,13 @@ socket.on('run',(data)=>{
             rooms.indexOf(p1.room)!=-1&&rooms.splice(rooms.indexOf(p1.room),1);
             Socket.sockets.in(p1.id).disconnectSockets();
             Socket.sockets.in(p2.id).disconnectSockets();
+            if(!(p1.friend_room.need===true||p1.friend_room.need===true)){
+                mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority')
+                .then(async(client)=>{await client.db().collection('rank').insertMany([{"name":p1.name,"score":p1.bat},{"name":p2.name,"score":p2.bat}]);
+                await client.db().collection('weekrank').insertMany([{"name":p1.name,"score":p1.bat,time:new Date()},{"name":p2.name,"score":p2.bat,time:new Date()}]);
+                await client.db().collection('Monthrank').insertMany([{"name":p1.name,"score":p1.bat,time:Number(""+new Date().getFullYear()+(new Date().getMonth()/2))},{"name":p2.name,"score":p2.bat,time:Number(""+new Date().getFullYear()+(new Date().getMonth()/2))}]);
+                await client.close();}).catch(err=>{})
+            }
             delete players[p1.id];
             delete players[p2.id];
             
@@ -319,7 +338,41 @@ socket.on("disconnect-player",()=>{
     })
     
 })
+if(new Date().getDay()==0){
+    const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
+    const today=new Date();
+    const firstDay=new Date(today.getFullYear(),today.getMonth(),today.getDate()+1-today.getDay())
+    const lastDay=new Date(today.getFullYear(),firstDay.getMonth(),firstDay.getDate()+6);
 
+    const cursordel=await Client.db().collection('weekrank').find({}).sort({score:-1});
+
+    var max=0,id=0;
+    await cursordel.forEach(async(el)=>{
+        if((el.time.getMonth()===firstDay.getMonth()&&!(el.time.getDate()>=firstDay.getDate()))||(el.time.getMonth()!=firstDay.getMonth()&&el.time.getMonth()!=lastDay.getMonth())){
+            if(max<el.score){
+        max=el.score;
+        id=el._id;
+        }
+        else{
+        await Client.db().collection('weekrank').deleteOne(el);
+        }
+        }
+        })
+        if(id!=0){
+            const prevcursor=await Client.db().collection('weekrank').find({_id:id});
+            const prevarrays=await prevcursor.toArray();
+            prevarrays[0].type="week";
+            await Client.db().collection('winners').deleteMany({type:"week"});     
+            await Client.db().collection('winners').insertOne(prevarrays[0]);
+            await Client.db().collection('weekrank').deleteOne({_id:id});
+            await Client.close();
+            }
+        else{
+            await Client.close();
+        }
+
+
+}
 })
 
 
