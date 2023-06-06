@@ -74,5 +74,21 @@ const monthVer=Number(""+today.getFullYear()+(today.getMonth()/2));
 
 })});
 
+
+leaderboardroutes.post('/contribute',async(req,res)=>{
+    const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
+    const cursor=await Client.db().collection('WTC');
+    const cursor_1=await cursor.findOne({country:req.body.data[0]});
+    await cursor.findOneAndUpdate({country:req.body.data[0]},{$set:{score:cursor_1.score+Number(req.body.data[1])}});
+    await Client.close();
+    res.status(201).json({msg:"done"});
+})
+leaderboardroutes.get('/contribute',async(req,res)=>{
+    const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
+    const cursor=await Client.db().collection('WTC').find({}).sort({score:-1});
+    const data=await cursor.toArray()
+    await Client.close();
+    res.status(200).json({data});
+})
 module.exports=leaderboardroutes;
 

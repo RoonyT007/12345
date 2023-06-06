@@ -7,12 +7,13 @@ const cors=require("cors");
 const Player = require('./socket class/player');
 const exp = require('constants');
 const mongodb=require('mongodb').MongoClient;
+const bodyparser=require('body-parser');
 const leaderboardroutes=require('./leaderboard');
 
 const today=new Date();
 const custom=new Date(98,1);
 const monthVer=Number(""+today.getFullYear()+(today.getMonth()/2));
-const firstDay=new Date(today.getFullYear(),today.getMonth(),today.getDate()+1-today.getDay())
+const firstDay=new Date(today.getFullYear(),today.getMonth(),today.getDate()-today.getDay())
 const lastDay=new Date(today.getFullYear(),firstDay.getMonth(),firstDay.getDate()+6);
 
 let game={};
@@ -21,6 +22,7 @@ let rooms=[];
 let friendrooms=[];
 const app=express();
 app.use(cors());
+app.use(bodyparser.json());
 app.use(express.static(path.join(__dirname,'build')));
 app.get('/',(req,res)=>{
     res.sendFile(path.join(__dirname,'build','index.html'))
@@ -83,7 +85,7 @@ function datasharing(player,socket){
 
 Socket.on('connect',async(socket)=>{
     //Socket.emit('total-player-data',Socket.sockets.sockets.size);
-
+    
 
   let player=new Player(socket.id);
   players[socket.id]=player;
@@ -341,7 +343,7 @@ socket.on("disconnect-player",()=>{
 if(new Date().getDay()==0){
     const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
     const today=new Date();
-    const firstDay=new Date(today.getFullYear(),today.getMonth(),today.getDate()+1-today.getDay())
+    const firstDay=new Date(today.getFullYear(),today.getMonth(),today.getDate()-today.getDay())
     const lastDay=new Date(today.getFullYear(),firstDay.getMonth(),firstDay.getDate()+6);
 
     const cursordel=await Client.db().collection('weekrank').find({}).sort({score:-1});
