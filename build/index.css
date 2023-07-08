@@ -18,7 +18,9 @@
 ::-webkit-scrollbar-thumb {
     background: #264653;
   }
-
+select,option{
+    font:-moz-pull-down-menu;
+}
 body{
     background-color:#f4a3616f;
     text-align: center;

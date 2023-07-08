@@ -11,6 +11,12 @@ leaderboardroutes.get('/alltime',(req,res)=>{
     mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority').then(async(Client)=>{
         await Client.connect();
         const cursor=await Client.db().collection('rank').find({}).sort({score:-1});
+
+        {/**Deletion if score is over 200** */}
+        await Client.db().collection('rank').deleteMany({score:{$gt:150}});
+        {/**Deletion if score is over 200** */}
+
+
         const cursorarray=await cursor.toArray();
         res.json({rank:cursorarray,winner:cursorarray[0]===undefined?{name:"TBD"}:cursorarray[0]});
         if(cursorarray[99]!==undefined){
@@ -30,6 +36,10 @@ leaderboardroutes.get('/week',async(req,res)=>{
     var prevwinner=await cursor2.toArray();
     prevwinner=prevwinner.length===0?{name:"TBD"}:prevwinner[0];
 
+
+    {/**Deletion if score is over 200** */}
+    await Client.db().collection('weekrank').deleteMany({score:{$gt:150}});
+     {/**Deletion if score is over 200** */}
     
 
     
@@ -53,6 +63,11 @@ const monthVer=Number(""+today.getFullYear()+(today.getMonth()/2));
         const arrays=await cursor.toArray();
         const prevcursor=await Client.db().collection('Monthrank').find({time:{$lt:monthVer}}).sort({score:-1}).limit(1);
         const prevarrays=await prevcursor.toArray();
+
+        {/**Deletion if score is over 200** */}
+        await Client.db().collection('Monthrank').deleteMany({score:{$gt:150}});
+        {/**Deletion if score is over 200** */}
+
         if(prevarrays.length>=1){
             await Client.db().collection('winners').deleteMany({type:"month"});
             prevarrays[0].type="month";

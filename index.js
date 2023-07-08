@@ -4,17 +4,23 @@ const express=require('express');
 const path=require('path');
 const io=require('socket.io');
 const cors=require("cors");
-const Player = require('./socket class/player');
 const exp = require('constants');
 const mongodb=require('mongodb').MongoClient;
 const bodyparser=require('body-parser');
+const nodeschedule=require('node-schedule');
+
+const Player = require('./socket class/player');
 const leaderboardroutes=require('./leaderboard');
+const tournamentroutes=require('./tournament');
 
 const today=new Date();
 const custom=new Date(98,1);
 const monthVer=Number(""+today.getFullYear()+(today.getMonth()/2));
 const firstDay=new Date(today.getFullYear(),today.getMonth(),today.getDate()-today.getDay())
 const lastDay=new Date(today.getFullYear(),firstDay.getMonth(),firstDay.getDate()+6);
+
+const month=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const team=["Kolkata Knights","Mumbai Blasters","Chennai Warriors","Bangalore Strikers","Delhi Tigers","Punjab Panthers","Rajasthan Rulers","Lucknow Superstars","Gujarat Gaints","Hyderabad Hurricanes"];
 
 let game={};
 let players={};
@@ -30,7 +36,8 @@ app.get('/',(req,res)=>{
 const server=app.listen(4000);
 
 app.use('/leaderboard',leaderboardroutes);
-const Socket=new io.Server(server,{cors:{ origin:"*"}});
+app.use('/tournament',tournamentroutes);
+const Socket=new io.Server(server,{cors:{ origin:'https://handcricket.in'}});
 
 function createRoom(roomId){
     rooms.push(roomId);
@@ -86,11 +93,12 @@ function datasharing(player,socket){
 Socket.on('connect',async(socket)=>{
     //Socket.emit('total-player-data',Socket.sockets.sockets.size);
     
-
+    
   let player=new Player(socket.id);
   players[socket.id]=player;
   socket.emit('player-data',player);
   socket.on('create-friend-room',(name,img)=>{
+    if(name[0]!=undefined){
     player.friend_room.need=true;
     player.img=img;
     player.name=name[0].toUpperCase()+name.slice(1).toLowerCase();
@@ -98,8 +106,10 @@ Socket.on('connect',async(socket)=>{
     createFriendRoom(player.id+"room",player);
     joinRoom(socket,player);
     datasharing(player,socket);
+    }
   })
   socket.on('join-friend-room',(name,img,roomIdCode)=>{
+    if(name[0]!=undefined){
     player.friend_room.need=true;
     player.img=img;
     player.name=name[0].toUpperCase()+name.slice(1).toLowerCase();
@@ -111,10 +121,12 @@ Socket.on('connect',async(socket)=>{
             datasharing(player,socket);
         }
     })
+}
    
     
   })
     socket.on('need-room',(name,img)=>{
+        if(name[0]!=undefined){
       
         player.img=img;
         player.name=name[0].toUpperCase()+name.slice(1).toLowerCase();
@@ -133,7 +145,7 @@ Socket.on('connect',async(socket)=>{
 
    datasharing(player,socket);
     
-    })
+    }})
     socket.on("cancelMatch",()=>{
         if(player.friend_room.need!==true){
             socket.leave(player.room);
@@ -231,8 +243,8 @@ Socket.on('connect',async(socket)=>{
     })
 })
 socket.on('run',(data)=>{
-    
-    player.data.run=parseInt(data);
+    if(Socket.sockets.adapter.rooms.get(player.room)!=undefined){
+    player.data.run=Number(data);
     player.data.server="received";
     if(player.overRuns.includes('W')){
         player.overRuns=[];
@@ -310,7 +322,7 @@ socket.on('run',(data)=>{
     }
     
 
-})
+}})
 socket.on("disconnect",()=>{
     
     delete game[rooms[rooms.indexOf(player.room)]];
@@ -340,41 +352,6 @@ socket.on("disconnect-player",()=>{
     })
     
 })
-if(new Date().getDay()==0){
-    const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
-    const today=new Date();
-    const firstDay=new Date(today.getFullYear(),today.getMonth(),today.getDate()-today.getDay())
-    const lastDay=new Date(today.getFullYear(),firstDay.getMonth(),firstDay.getDate()+6);
-
-    const cursordel=await Client.db().collection('weekrank').find({}).sort({score:-1});
-
-    var max=0,id=0;
-    await cursordel.forEach(async(el)=>{
-        if((el.time.getMonth()===firstDay.getMonth()&&!(el.time.getDate()>=firstDay.getDate()))||(el.time.getMonth()!=firstDay.getMonth()&&el.time.getMonth()!=lastDay.getMonth())){
-            if(max<el.score){
-        max=el.score;
-        id=el._id;
-        }
-        else{
-        await Client.db().collection('weekrank').deleteOne(el);
-        }
-        }
-        })
-        if(id!=0){
-            const prevcursor=await Client.db().collection('weekrank').find({_id:id});
-            const prevarrays=await prevcursor.toArray();
-            prevarrays[0].type="week";
-            await Client.db().collection('winners').deleteMany({type:"week"});     
-            await Client.db().collection('winners').insertOne(prevarrays[0]);
-            await Client.db().collection('weekrank').deleteOne({_id:id});
-            await Client.close();
-            }
-        else{
-            await Client.close();
-        }
-
-
-}
 })
 
 
@@ -426,3 +403,108 @@ function runSimulator(p1,p2){
     }
     return[p1,p2];
 }
+
+
+
+
+
+
+
+
+
+
+
+/****JOB SCHEDULE****** */
+/**For resetting the league  ***/
+
+
+const job=nodeschedule.scheduleJob('0 0 0 1 * *',async()=>{
+
+    const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
+    try{
+        
+        const prevdate=new Date(new Date().getFullYear(),new Date().getMonth(),-2);
+        const prevmonth=`${month[prevdate.getMonth()]} - ${prevdate.getFullYear()}`;
+
+        const previousWinner=await Client.db().collection('tournament').findOne({month:prevmonth});
+        const winningTeam=previousWinner!=null&& previousWinner.table.reduce((maxTeam,currentTeam)=>{
+            if(maxTeam.score===currentTeam.score){
+                return maxTeam.runs>currentTeam.runs?maxTeam:currentTeam;
+            }
+            else{
+                return maxTeam.score>currentTeam.score?maxTeam:currentTeam;
+            }
+            
+        });
+        previousWinner!=null&&await Client.db().collection('tournament').findOneAndUpdate({month:"alltime",'table.team':winningTeam.team},{$inc:{'table.$.cups':1}});
+    
+        
+        let newteams=team.map((el)=>{return({team:el,score:0,stage:"I",runs:0})});
+        const newmonth=`${month[new Date().getMonth()]} - ${new Date().getFullYear()}`;
+        const beforedata={month:newmonth,table:newteams,time:new Date()};
+    
+        const precheck=await Client.db().collection('tournament').find({month:newmonth}).toArray();
+       if(precheck.length==0){
+        await Client.db().collection('tournament').insertOne(beforedata);
+       }
+    }
+    catch{
+
+    }
+    finally{
+        await Client.close();
+    }
+   
+
+   
+})
+
+
+/**For selecting teams for playoffs  ***/
+const playoffjob=nodeschedule.scheduleJob('0 0 0 20 * *',async()=>{
+    const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
+    try{
+    const currentmonth=`${month[new Date().getMonth()]} - ${new Date().getFullYear()}`;
+    const precheck=await Client.db().collection('tournament').findOne({month:currentmonth});
+    precheck.table.sort((a,b)=>{return b.runs-a.runs}).sort((a,b)=>{return(b.score-a.score)});
+   
+    const updatedPrecheck=precheck.table.map((e,ind)=>{
+        if(ind>3){
+            e.stage='E';
+            
+        }
+        else{
+            e.stage='P';
+        }
+        return e;
+    })
+
+    await Client.db().collection('tournament').updateOne({month:currentmonth},{$set:{table:precheck.table}});
+    }
+    catch(error){
+
+    }
+    finally{
+        await Client.close();
+    }
+    
+
+})
+
+/**********For resetting the week league */
+
+const weekJob=nodeschedule.scheduleJob('0 0 0 * * 7',async()=>{
+    const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
+
+    try{
+        const cursordel=await Client.db().collection('weekrank').find({}).sort({score:-1}).limit(1).toArray();
+        const prevarrays={name:cursordel[0].name,score:cursordel[0].score,time:cursordel[0].time,type:"week"};
+        await Client.db().collection('winners').deleteMany({type:"week"});     
+        await Client.db().collection('winners').insertOne(prevarrays);
+        await Client.db().collection('weekrank').deleteMany({});
+    }
+   finally{
+    await Client.close();
+   }
+
+})
