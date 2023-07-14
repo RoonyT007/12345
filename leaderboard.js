@@ -13,7 +13,7 @@ leaderboardroutes.get('/alltime',(req,res)=>{
         const cursor=await Client.db().collection('rank').find({}).sort({score:-1});
 
         {/**Deletion if score is over 200** */}
-        await Client.db().collection('rank').deleteMany({score:{$gt:150}});
+        await Client.db().collection('rank').deleteMany({score:{$gt:200}});
         {/**Deletion if score is over 200** */}
 
 
@@ -38,7 +38,7 @@ leaderboardroutes.get('/week',async(req,res)=>{
 
 
     {/**Deletion if score is over 200** */}
-    await Client.db().collection('weekrank').deleteMany({score:{$gt:150}});
+    await Client.db().collection('weekrank').deleteMany({score:{$gt:200}});
      {/**Deletion if score is over 200** */}
     
 
@@ -65,7 +65,7 @@ const monthVer=Number(""+today.getFullYear()+(today.getMonth()/2));
         const prevarrays=await prevcursor.toArray();
 
         {/**Deletion if score is over 200** */}
-        await Client.db().collection('Monthrank').deleteMany({score:{$gt:150}});
+        await Client.db().collection('Monthrank').deleteMany({score:{$gt:200}});
         {/**Deletion if score is over 200** */}
 
         if(prevarrays.length>=1){
@@ -90,20 +90,20 @@ const monthVer=Number(""+today.getFullYear()+(today.getMonth()/2));
 })});
 
 
-leaderboardroutes.post('/contribute',async(req,res)=>{
-    const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
-    const cursor=await Client.db().collection('WTC');
-    const cursor_1=await cursor.findOne({country:req.body.data[0]});
-    await cursor.findOneAndUpdate({country:req.body.data[0]},{$set:{score:cursor_1.score+Number(req.body.data[1])}});
-    await Client.close();
-    res.status(201).json({msg:"done"});
+leaderboardroutes.post('/survey',async(req,res)=>{
+    try{
+        const obj={};
+        obj[req.body.data]=1;
+        const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
+        await Client.db().collection('survey').findOneAndUpdate({name:"emojis"},{$inc:obj});
+        req.body.text.length>3&&await Client.db().collection('survey').insertOne({feedback:req.body.text});
+        await Client.close();
+        res.status(201).json({msg:"done"});
+    }
+   catch(e){
+    console.log(e);
+   }
 })
-leaderboardroutes.get('/contribute',async(req,res)=>{
-    const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
-    const cursor=await Client.db().collection('WTC').find({}).sort({score:-1});
-    const data=await cursor.toArray()
-    await Client.close();
-    res.status(200).json({data});
-})
+
 module.exports=leaderboardroutes;
 

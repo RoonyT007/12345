@@ -37,7 +37,7 @@ const server=app.listen(4000);
 
 app.use('/leaderboard',leaderboardroutes);
 app.use('/tournament',tournamentroutes);
-const Socket=new io.Server(server,{cors:{ origin:'https://handcricket.in'}});
+const Socket=new io.Server(server,{cors:{ origin:['https://www.handcricket.in','https://handcricket.in']}});
 
 function createRoom(roomId){
     rooms.push(roomId);
