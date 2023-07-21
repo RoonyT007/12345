@@ -18,7 +18,7 @@
 ::-webkit-scrollbar-thumb {
     background: #264653;
   }
-  input, input:before, input:after {
+  input, input:before, input:after,textarea {
     -webkit-user-select: initial;
     -khtml-user-select: initial;
     -moz-user-select: initial;
@@ -34,28 +34,36 @@ body{
 }
 h1{
     font-size:39px ;
+    font-weight: 700;
 }
 h2{
     font-size: 37px;
+    font-weight: 600;
 }
 h3{
     font-size:34.8px;
+    font-weight:  600;
  }
  h4{
     font-size: 32px;
+    font-weight: 500;
  }
  h5{
     font-size: 26.4px;
+    font-weight: 500;
  }
  h6{
     font-size: 22px;
+    font-weight: 500;
  }
  p{
     font-size: 20px;
+    font-weight: 400;
  }
 @media screen and (max-width:800px){
     h1{
         font-size: 28px;
+        font-weight: 700;
     }
     h2{
         font-size: 26px;
