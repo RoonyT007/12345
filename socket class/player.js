@@ -7,9 +7,11 @@ class Player{
         this.opponent={name:"",img:""};
         this.room="";
         this.wait=2;
+        this.bot=false;
+        this.botId="";
         this.count=0;
         this.overRuns=[];
-        this.data={};
+        this.data={server:""};
         this.toss={tossed:false,coin:false,headortails:""};
         this.toss.result="";
         this.toss.choose="";

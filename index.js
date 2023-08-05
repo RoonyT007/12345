@@ -37,9 +37,8 @@ const server=app.listen(4000);
 
 app.use('/leaderboard',leaderboardroutes);
 app.use('/tournament',tournamentroutes);
+// ['https://www.handcricket.in','https://handcricket.in']
 const Socket=new io.Server(server,{cors:{ origin:'*'}});
-
-//['https://www.handcricket.in','https://handcricket.in']
 
 function createRoom(roomId){
     rooms.push(roomId);
@@ -58,6 +57,7 @@ function createFriendRoom(roomId,player){
 }
 function datasharing(player,socket){
     var randomTossElgibility=Math.ceil(Math.random()*2)===1?"first":"second";
+    if(Socket.sockets.adapter.rooms.get(player.room)!=undefined){
     Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach((el,index)=>{
         if(Socket.sockets.adapter.rooms.get(player.room).size===1){
            
@@ -79,8 +79,9 @@ function datasharing(player,socket){
             }
             
         }
+    })
     
-   })   
+  
    let p1=players[Array.from(Socket.sockets.adapter.rooms.get(player.room))[0]];
     let p2=players[Array.from(Socket.sockets.adapter.rooms.get(player.room))[1]];
     if(p1.name.length>0&&p2!=undefined){
@@ -90,6 +91,7 @@ function datasharing(player,socket){
      p2.opponent.img=p1.img;
      socket.emit('player-data',player);
     }
+} 
 }
 
 Socket.on('connect',async(socket)=>{
@@ -127,9 +129,11 @@ Socket.on('connect',async(socket)=>{
    
     
   })
-    socket.on('need-room',(name,img)=>{
-        if(name[0]!=undefined){
-      
+    socket.on('need-room',(name,img,botId)=>{
+
+        
+        if(name!=undefined  ){
+        player.botId=botId;
         player.img=img;
         player.name=name[0].toUpperCase()+name.slice(1).toLowerCase();
                 if(rooms.length===0){
@@ -138,6 +142,7 @@ Socket.on('connect',async(socket)=>{
             joinRoom(socket,player);
         }
         else{
+                
             joinRoom(socket,player);
     }
     if(player.room.length===0){
@@ -299,8 +304,7 @@ socket.on('run',(data)=>{
         }
         p1.data.server="";
         p2.data.server="";
-
-        Socket.in(player.room).emit('run-data',{p1,p2});
+        Socket.to(player.room).emit('run-data',{p1,p2});
         if(p1.completed.length===2 && p2.completed.length===2){
             rooms.pop(p1.room);
             Socket.socketsLeave(p1.room);
@@ -326,7 +330,6 @@ socket.on('run',(data)=>{
 
 }})
 socket.on("disconnect",()=>{
-    
     delete game[rooms[rooms.indexOf(player.room)]];
     rooms.indexOf(player.room)!=-1&&rooms.splice(rooms.indexOf(player.room),1);
     friendrooms.map(e=>Object.values(e)[0]).indexOf(player.room)!=-1&&friendrooms.splice(friendrooms.map(e=>Object.values(e)[0]).indexOf(player.room),1);
@@ -363,7 +366,25 @@ socket.on("disconnect-player",()=>{
 function joinRoom(socket,player){
     if(player.friend_room.need===false){
     for(i=0;i<rooms.length;i++){
-        if(game[rooms[i]].length<=1){
+        let continueTrue=false;
+        if(game[rooms[i]]!=undefined&&game[rooms[i]].length<=1){
+            for (j of Object.values(players)){
+                if(j.room===rooms[i]){
+                    if(j.name===player.name){
+                        continueTrue=true;
+                       break;
+                    }
+                }
+            }
+                if(player.botId+"room"===rooms[i] && player.botId!=false){
+                
+            }
+            else if(player.botId!=false){
+                continue;
+            }
+            if(continueTrue){
+                continue;
+            }
             socket.join(rooms[i]);
             game[rooms[i]].push(player.id);
             player.room=rooms[i];
@@ -421,7 +442,6 @@ function runSimulator(p1,p2){
 
 
 const job=nodeschedule.scheduleJob('0 0 0 1 * *',async()=>{
-
     const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
     try{
         
@@ -446,12 +466,13 @@ const job=nodeschedule.scheduleJob('0 0 0 1 * *',async()=>{
         const beforedata={month:newmonth,table:newteams,time:new Date()};
     
         const precheck=await Client.db().collection('tournament').find({month:newmonth}).toArray();
+        await Client.db().collection('tournamentData').deleteMany({});
        if(precheck.length==0){
         await Client.db().collection('tournament').insertOne(beforedata);
        }
     }
-    catch{
-
+    catch(e){
+        
     }
     finally{
         await Client.close();

@@ -101,7 +101,7 @@ leaderboardroutes.post('/survey',async(req,res)=>{
         res.status(201).json({msg:"done"});
     }
    catch(e){
-    console.log(e);
+
    }
 })
 
