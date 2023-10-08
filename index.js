@@ -10,6 +10,10 @@ const bodyparser=require('body-parser');
 const nodeschedule=require('node-schedule');
 
 const Player = require('./socket class/player');
+
+
+const playersCanContribute=[];
+module.exports.playersCanContribute=playersCanContribute;
 const leaderboardroutes=require('./leaderboard');
 const tournamentroutes=require('./tournament');
 
@@ -97,10 +101,10 @@ function datasharing(player,socket){
 Socket.on('connect',async(socket)=>{
     //Socket.emit('total-player-data',Socket.sockets.sockets.size);
     
-    
   let player=new Player(socket.id);
   players[socket.id]=player;
   socket.emit('player-data',player);
+  console.log('No.of Players=',Object.keys(players).length,'No.of Rooms=',rooms.length,'game array',game);
   socket.on('create-friend-room',(name,img)=>{
     if(name[0]!=undefined){
     player.friend_room.need=true;
@@ -130,22 +134,18 @@ Socket.on('connect',async(socket)=>{
     
   })
     socket.on('need-room',(name,img,botId)=>{
-
-        
         if(name!=undefined  ){
         player.botId=botId;
         player.img=img;
         player.name=name[0].toUpperCase()+name.slice(1).toLowerCase();
                 if(rooms.length===0){
-    
             createRoom(player.id+"room");
             joinRoom(socket,player);
         }
         else{
-                
             joinRoom(socket,player);
     }
-    if(player.room.length===0){
+    if(player.room.length===0&&player.botId==false){
         createRoom(player.id+"room");
         joinRoom(socket,player);
     }      
@@ -306,12 +306,15 @@ socket.on('run',(data)=>{
         p2.data.server="";
         Socket.to(player.room).emit('run-data',{p1,p2});
         if(p1.completed.length===2 && p2.completed.length===2){
-            rooms.pop(p1.room);
+            playersCanContribute.push(p1.id);
+            playersCanContribute.push(p2.id);
+
             Socket.socketsLeave(p1.room);
             delete game[rooms[rooms.indexOf(p1.room)]];
             rooms.indexOf(p1.room)!=-1&&rooms.splice(rooms.indexOf(p1.room),1);
-            Socket.sockets.in(p1.id).disconnectSockets();
-            Socket.sockets.in(p2.id).disconnectSockets();
+            // rooms.pop(p1.room);
+            // Socket.sockets.in(p1.id).disconnectSockets();
+            // Socket.sockets.in(p2.id).disconnectSockets();
             if(!(p1.friend_room.need===true||p1.friend_room.need===true)){
                 mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority')
                 .then(async(client)=>{await client.db().collection('rank').insertMany([{"name":p1.name,"score":p1.bat},{"name":p2.name,"score":p2.bat}]);
@@ -330,7 +333,14 @@ socket.on('run',(data)=>{
 
 }})
 socket.on("disconnect",()=>{
+    if(playersCanContribute.indexOf(player.id)!=-1){
+        playersCanContribute.splice(playersCanContribute.indexOf(player.id),1);
+    }
+    if(player.room.length===0){
+       player.room=player.id+'room';
+    }
     delete game[rooms[rooms.indexOf(player.room)]];
+    delete game[player.room];
     rooms.indexOf(player.room)!=-1&&rooms.splice(rooms.indexOf(player.room),1);
     friendrooms.map(e=>Object.values(e)[0]).indexOf(player.room)!=-1&&friendrooms.splice(friendrooms.map(e=>Object.values(e)[0]).indexOf(player.room),1);
     Socket.sockets.adapter.rooms.get(player.room)!=undefined &&Array.from(Socket.sockets.adapter.rooms.get(player.room)).forEach(id=>{
@@ -344,6 +354,9 @@ socket.on("disconnect",()=>{
 })
 
 socket.on("disconnect-player",()=>{
+    if(playersCanContribute.indexOf(player.id)!=-1){
+        playersCanContribute.splice(playersCanContribute.indexOf(player.id),1);
+    }
     delete game[rooms[rooms.indexOf(player.room)]];
     rooms.indexOf(player.room)!=-1&&rooms.splice(rooms.indexOf(player.room),1);
     friendrooms.map(e=>Object.values(e)[0]).indexOf(player.room)!=-1&&friendrooms.splice(friendrooms.map(e=>Object.values(e)[0]).indexOf(player.room),1);
@@ -364,6 +377,7 @@ socket.on("disconnect-player",()=>{
 
 //JOiN A RANDOM ROOM FUNCTION
 function joinRoom(socket,player){
+
     if(player.friend_room.need===false){
     for(i=0;i<rooms.length;i++){
         let continueTrue=false;
@@ -377,7 +391,6 @@ function joinRoom(socket,player){
                 }
             }
                 if(player.botId+"room"===rooms[i] && player.botId!=false){
-                
             }
             else if(player.botId!=false){
                 continue;

@@ -11,6 +11,7 @@
     scrollbar-width:thin;
     scrollbar-color: #264653 #f4a361;
 }
+
 .loader-container{
     position: absolute;
     left: 0;
@@ -33,6 +34,71 @@
     border-top: 4px solid #e76f51; /* Blue */
     animation: spin 2s infinite;
 }
+#higher-container{
+    min-height: 100svh;
+    border-bottom: 2px solid #264653;
+}
+#lower-container{
+    background-color: #f4a361;
+}
+ .about-content{
+    max-width: 1000px;
+    text-align:right;
+    height: 100%;
+    width: 100%;
+    padding: 30px;
+    transition: all 1s;
+    opacity: 100;
+}
+.about-content-2 ul{
+    padding: 10px 0px;
+    width: max-content;
+    margin: 0px 0px 0px 50px;
+    
+}
+.about-content ul>*,.about-content-2 ul>*{
+    text-align: left;
+    font-family: 'Roboto', sans-serif;
+}
+.about-content ul li ol>*{
+    text-align: left;
+}
+.about-content svg{
+    position: static;
+    transform: none;
+    fill: #264653;
+    stroke: #264653;
+    stroke-width: 5px;
+    width: 40px;
+    height: 40px;
+    border-radius: 7px;
+    margin-top: 0px;
+
+}
+.logos svg:hover{
+    fill:#f4a361 ;
+    stroke:#f4a361;
+    background-color: #264653;
+   }
+
+   .logos{
+    display: flex;
+    align-items:center ;
+    justify-content: center;
+    gap: 10px;
+    width: max-content;
+    padding: 10px 0px 15px;
+   }
+   .logos>a{
+    display: inline-block;
+    height: 40px;
+   }
+   .logos>a>svg{
+    height: 100%;
+    border-radius: 5px;
+    transition: all 0.3;
+   }
+
 *::-webkit-scrollbar{
     background-color: #f4a361;
     width: 1px;
@@ -80,7 +146,42 @@ h3{
  }
  p{
     font-size: 20px;
-    font-weight: 400;
+    font-weight: 300;
+ }
+ .about-content p, .about-content li{
+    font-family: 'Roboto', sans-serif;
+    font-weight: 600;
+    text-align: left;
+ }
+ .about-content p{
+    margin-bottom: 10px;
+    text-indent: 50px;
+ }
+ .about-content-2{
+    max-width: 1000px;
+   
+    text-align:right;
+    height: 100%;
+    width: 100%;
+    padding: 30px;
+    transition: all 1s;
+ }
+ .about-content-2>h3{
+    margin: 50px 0px 15px;
+    font-size: 30px;
+    font-weight:  600;
+    
+ }
+ .about-content-2>h1{
+    margin: 40px 0px 25px;
+    font-weight:  600;
+ }
+ .about-content-2>p{
+   text-align: left;
+   font-family: 'Roboto', sans-serif;
+   margin-bottom: 10px;
+   font-weight: 400;
+   text-indent: 50px;
  }
 
 @media screen and (max-width:800px){
@@ -90,16 +191,16 @@ h3{
     }
     h2{
         font-size: 26px;
-        font-weight: 300;
+        font-weight: 600;
         
     }
     h3{
        font-size:22px ;
-       font-weight: 300;
+       font-weight: 500;
     }
     h4{
         font-size: 20px;
-        font-weight: 300;
+        font-weight: 500;
     }
     h5{
         font-size: 16px;
@@ -113,4 +214,10 @@ h3{
         font-size: 16px;
         font-weight: 300;
     }
+    .about-content-2>h3{
+        margin: 40px 0px 10px;
+     }
+     .about-content-2>h1{
+        margin: 30px 0px 15px;
+     }
 }

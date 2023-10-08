@@ -1,5 +1,5 @@
 const express=require('express');
-
+const { playersCanContribute } = require('./index');
 
 const tournamentroutes=express.Router();
 const mongodb=require('mongodb').MongoClient;
@@ -48,27 +48,32 @@ tournamentroutes.get('/:month',async(req,res)=>{
 })
 
 tournamentroutes.post('/contribute',async(req,res)=>{
-    if(req.body.data[2]<=200){
-        const month=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const currentmonth=`${month[new Date().getMonth()]} - ${new Date().getFullYear()}`;
-    const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
-    isNaN(Number(req.body.data[1]))==false&& await Client.db().collection('tournament').findOneAndUpdate({month:currentmonth,'table.team':req.body.data[0]},{$inc:{'table.$.score':Number(req.body.data[1])}});
-    isNaN(Number(req.body.data[2]))==false&&await Client.db().collection('tournament').findOneAndUpdate({month:currentmonth,'table.team':req.body.data[0]},{$inc:{'table.$.runs':Number(req.body.data[2])}});
-    
-    const check=await Client.db().collection('tournamentData').findOne({name:req.body.data[4]});
-    if(check){
-        await Client.db().collection('tournamentData').findOneAndUpdate({name:req.body.data[4]},{$inc:{runs:Number(req.body.data[2]),wickets:Number(req.body.data[3])}});
+    if(playersCanContribute.indexOf(req.body.playerId)!=-1){
+        if(req.body.data[2]<=200){
+            const month=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        const currentmonth=`${month[new Date().getMonth()]} - ${new Date().getFullYear()}`;
+        const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/tests?retryWrites=true&w=majority');
+        isNaN(Number(req.body.data[1]))==false&& await Client.db().collection('tournament').findOneAndUpdate({month:currentmonth,'table.team':req.body.data[0]},{$inc:{'table.$.score':Number(req.body.data[1])}});
+        isNaN(Number(req.body.data[2]))==false&&await Client.db().collection('tournament').findOneAndUpdate({month:currentmonth,'table.team':req.body.data[0]},{$inc:{'table.$.runs':Number(req.body.data[2])}});
+        
+        const check=await Client.db().collection('tournamentData').findOne({name:req.body.data[4]});
+        if(check){
+            await Client.db().collection('tournamentData').findOneAndUpdate({name:req.body.data[4]},{$inc:{runs:Number(req.body.data[2]),wickets:Number(req.body.data[3])}});
+        }
+        else{
+            await Client.db().collection('tournamentData').insertOne({name:req.body.data[4],runs:Number(req.body.data[2]),wickets:Number(req.body.data[3])}); 
+        }
+        const orange=await Client.db().collection('tournamentData').find({}).project({runs:1,name:1}).sort({runs:-1}).limit(1).toArray();
+        const purple=await Client.db().collection('tournamentData').find({}).project({wickets:1,name:1}).sort({wickets:-1}).limit(1).toArray();
+        await Client.db().collection('tournament').findOneAndUpdate({month:currentmonth},{$set:{orange:[orange[0].name,orange[0].runs],purple:[purple[0].name,purple[0].wickets]}});
+        await Client.close();
+        }
+        playersCanContribute.splice(playersCanContribute.indexOf(req.body.playerId),1);
+        res.status(201).json({msg:"done"});
     }
     else{
-        await Client.db().collection('tournamentData').insertOne({name:req.body.data[4],runs:Number(req.body.data[2]),wickets:Number(req.body.data[3])}); 
+        res.status(400).json({msg:"Invalid Request"});
     }
-    const orange=await Client.db().collection('tournamentData').find({}).project({runs:1,name:1}).sort({runs:-1}).limit(1).toArray();
-    const purple=await Client.db().collection('tournamentData').find({}).project({wickets:1,name:1}).sort({wickets:-1}).limit(1).toArray();
-    await Client.db().collection('tournament').findOneAndUpdate({month:currentmonth},{$set:{orange:[orange[0].name,orange[0].runs],purple:[purple[0].name,purple[0].wickets]}});
-    await Client.close();
-    }
-    res.status(201).json({msg:"done"});
-    
 })
 
 module.exports=tournamentroutes;
