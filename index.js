@@ -14,6 +14,7 @@ const Player = require('./socket class/player');
 
 const playersCanContribute=[];
 module.exports.playersCanContribute=playersCanContribute;
+
 const leaderboardroutes=require('./leaderboard');
 const tournamentroutes=require('./tournament');
 
@@ -100,11 +101,12 @@ function datasharing(player,socket){
 
 Socket.on('connect',async(socket)=>{
     //Socket.emit('total-player-data',Socket.sockets.sockets.size);
+
     
   let player=new Player(socket.id);
   players[socket.id]=player;
   socket.emit('player-data',player);
-  console.log('No.of Players=',Object.keys(players).length,'No.of Rooms=',rooms.length,'game array',game);
+//   console.log('No.of Players=',Object.keys(players).length,'No.of Rooms=',rooms.length,'game array',game);
   socket.on('create-friend-room',(name,img)=>{
     if(name[0]!=undefined){
     player.friend_room.need=true;
@@ -308,13 +310,13 @@ socket.on('run',(data)=>{
         if(p1.completed.length===2 && p2.completed.length===2){
             playersCanContribute.push(p1.id);
             playersCanContribute.push(p2.id);
-
+           
             Socket.socketsLeave(p1.room);
             delete game[rooms[rooms.indexOf(p1.room)]];
             rooms.indexOf(p1.room)!=-1&&rooms.splice(rooms.indexOf(p1.room),1);
             // rooms.pop(p1.room);
-            // Socket.sockets.in(p1.id).disconnectSockets();
-            // Socket.sockets.in(p2.id).disconnectSockets();
+            Socket.sockets.in(p1.id).disconnectSockets();
+            Socket.sockets.in(p2.id).disconnectSockets();
             if(!(p1.friend_room.need===true||p1.friend_room.need===true)){
                 mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority')
                 .then(async(client)=>{await client.db().collection('rank').insertMany([{"name":p1.name,"score":p1.bat},{"name":p2.name,"score":p2.bat}]);
@@ -333,9 +335,6 @@ socket.on('run',(data)=>{
 
 }})
 socket.on("disconnect",()=>{
-    if(playersCanContribute.indexOf(player.id)!=-1){
-        playersCanContribute.splice(playersCanContribute.indexOf(player.id),1);
-    }
     if(player.room.length===0){
        player.room=player.id+'room';
     }
@@ -354,9 +353,6 @@ socket.on("disconnect",()=>{
 })
 
 socket.on("disconnect-player",()=>{
-    if(playersCanContribute.indexOf(player.id)!=-1){
-        playersCanContribute.splice(playersCanContribute.indexOf(player.id),1);
-    }
     delete game[rooms[rooms.indexOf(player.room)]];
     rooms.indexOf(player.room)!=-1&&rooms.splice(rooms.indexOf(player.room),1);
     friendrooms.map(e=>Object.values(e)[0]).indexOf(player.room)!=-1&&friendrooms.splice(friendrooms.map(e=>Object.values(e)[0]).indexOf(player.room),1);
@@ -451,96 +447,208 @@ function runSimulator(p1,p2){
 
 
 /****JOB SCHEDULE****** */
-/**For resetting the league  ***/
+/**For updating the table  ***/
 
+const jobRule = new nodeschedule.RecurrenceRule();
+jobRule.hour = 0;  // 0 corresponds to midnight
+jobRule.minute = 0; 
 
-const job=nodeschedule.scheduleJob('0 0 0 1 * *',async()=>{
+const dailyjob=nodeschedule.scheduleJob(jobRule,async()=>{
+    const today = new Date();
+    today.setDate(today.getDate() -1);
+    const indianTime = today.toLocaleDateString("en-US", {timeZone: 'Asia/Kolkata'});
+    let prevIndianDate=indianTime.split('/')[1];
+    const currentmonth=`${month[new Date().getMonth()]} - ${new Date().getFullYear()}`;
     const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
     try{
-        
-        const prevdate=new Date(new Date().getFullYear(),new Date().getMonth(),-2);
-        const prevmonth=`${month[prevdate.getMonth()]} - ${prevdate.getFullYear()}`;
-
-        const previousWinner=await Client.db().collection('tournament').findOne({month:prevmonth});
-        const winningTeam=previousWinner!=null&& previousWinner.table.reduce((maxTeam,currentTeam)=>{
-            if(maxTeam.score===currentTeam.score){
-                return maxTeam.runs>currentTeam.runs?maxTeam:currentTeam;
-            }
-            else{
-                return maxTeam.score>currentTeam.score?maxTeam:currentTeam;
-            }
+       
+        if(new Date().getDate()<=28 && new Date().getDate()!=1){
             
-        });
-        previousWinner!=null&&await Client.db().collection('tournament').findOneAndUpdate({month:"alltime",'table.team':winningTeam.team},{$inc:{'table.$.cups':1}});
+            let todayMatchData=await Client.db().collection('fixtureOriginal').findOne({});
+            if(new Date().getDate()==1){
+                prevIndianDate=28;
+            }
+            todayMatchData[prevIndianDate].forEach( async(e,ind)=>{
+                if(e!=null){
+                        if(e.team1[1]!=e.team2[1] ){
+                            await Client.db().collection('fixtureOriginal').findOneAndUpdate({[prevIndianDate+".team1"]:e.team1},{$set:{[prevIndianDate+".$."+"won"]:e.team1[1]>e.team2[1]?e.team1[0]:e.team2[0]}});
+                            
+                            if(new Date().getDate()<=25){
+                                await Client.db().collection('tournament').findOneAndUpdate({month:currentmonth,"table.team":e.team1[0]},{$inc:{"table.$.played":1,"table.$.won":e.team1[1]>e.team2[1]?1:0,"table.$.lost":e.team1[1]>e.team2[1]?0:1,"table.$.runs":e.team1[2],"table.$.points":e.team1[1]>e.team2[1]?2:0}});
+                                await Client.db().collection('tournament').findOneAndUpdate({month:currentmonth,"table.team":e.team2[0]},{$inc:{"table.$.played":1,"table.$.won":e.team1[1]>e.team2[1]?0:1,"table.$.lost":e.team1[1]>e.team2[1]?1:0,"table.$.runs":e.team2[2],"table.$.points":e.team1[1]>e.team2[1]?0:2}});
+                            }
+                           
+                        }
+                        else if (e.team1[1]==e.team2[1] && e.team1[2]!=e.team2[2]){
+                            await Client.db().collection('fixtureOriginal').findOneAndUpdate({[prevIndianDate+".team1"]:e.team1},{$set:{[prevIndianDate+".$."+"won"]:e.team1[2]>e.team2[2]?e.team1[0]:e.team2[0]}});
+                            if(new Date().getDate()<=25){
+                            await Client.db().collection('tournament').findOneAndUpdate({month:currentmonth,"table.team":e.team1[0]},{$inc:{"table.$.played":1,"table.$.won":e.team1[2]>e.team2[2]?1:0,"table.$.lost":e.team1[2]>e.team2[2]?0:1,"table.$.runs":e.team1[2],"table.$.points":e.team1[2]>e.team2[2]?2:0}});
+                            await Client.db().collection('tournament').findOneAndUpdate({month:currentmonth,"table.team":e.team2[0]},{$inc:{"table.$.played":1,"table.$.won":e.team1[2]>e.team2[2]?0:1,"table.$.lost":e.team1[2]>e.team2[2]?1:0,"table.$.runs":e.team2[2],"table.$.points":e.team1[2]>e.team2[2]?0:2}});
+                            }
+                        }
+                        else if(e.team1[2]==e.team2[2]){
+                            await Client.db().collection('fixtureOriginal').findOneAndUpdate({[prevIndianDate+".team1"]:e.team1},{$set:{[prevIndianDate+".$."+"won"]:"Draw"}});
+                            if(new Date().getDate()<=25){
+                            await Client.db().collection('tournament').findOneAndUpdate({month:currentmonth,"table.team":e.team1[0]},{$inc:{"table.$.played":1,"table.$.draw":1,"table.$.runs":e.team1[2],"table.$.points":1}});
+                            await Client.db().collection('tournament').findOneAndUpdate({month:currentmonth,"table.team":e.team2[0]},{$inc:{"table.$.played":1,"table.$.draw":1,"table.$.runs":e.team2[2],"table.$.points":1}});
+                            }
+                        }
+                        const topContributor=await Client.db().collection(`topContributors${ind}`).find().sort({points:-1}).limit(1).toArray();
+                        if(topContributor.length>0){
+                            await Client.db().collection('playerStats').updateOne({name:topContributor[0].name},{$inc:{mom:1}},{upsert:true});
+                            await Client.db().collection('fixtureOriginal').findOneAndUpdate({[prevIndianDate+".team1"]:e.team1},{$set:{[prevIndianDate+".$."+"mom"]:topContributor[0].name}});
+                            await Client.db().collection(`topContributors${ind}`).deleteMany({});
+                        }
+
+                        if((todayMatchData[prevIndianDate].length-1)===ind && new Date().getDate()<=24 &&new Date().getDate()!=1 ){
+                            await Client.close();
+                        }
+
+                    }
+            });
     
-        
-        let newteams=team.map((el)=>{return({team:el,score:0,stage:"I",runs:0})});
+        }
+
+        if(new Date().getDate()==1){
+
+
+            const prevdate=new Date(new Date().getFullYear(),new Date().getMonth(),-2);
+            const prevmonth=`${month[prevdate.getMonth()]} - ${prevdate.getFullYear()}`;
+            // new logic
+            // const winner=await Client.db().collection('fixtureOriginal').findOne({});
+            // winner!=null&&await Client.db().collection('tournament').findOneAndUpdate({month:"alltime",'table.team':winner[28].won},{$inc:{'table.$.cups':1}});
+
+            // old logic
+            const previousWinnerTeam=await Client.db().collection('tournament').findOne({month:prevmonth});
+            const winningTeam=previousWinnerTeam!=null&& previousWinnerTeam.table.reduce((maxTeam,currentTeam)=>{
+                if(maxTeam.score===currentTeam.score){
+                    return maxTeam.runs>currentTeam.runs?maxTeam:currentTeam;
+                }
+                else{
+                    return maxTeam.score>currentTeam.score?maxTeam:currentTeam;
+                }
+                
+            });
+            previousWinnerTeam!=null&&await Client.db().collection('tournament').findOneAndUpdate({month:"alltime",'table.team':winningTeam.team},{$inc:{'table.$.cups':1}});
+
+
+            
+    
+            const previousWinner=await Client.db().collection('tournament').findOne({month:prevmonth});
+             // old logic ends
+
+            // new logic
+            // await Client.db().collection('playerStats').updateOne({name:previousWinner.mot[0]},{$inc:{mot:1}},{upsert:true});
+             // new logic ends
+
+
+            await Client.db().collection('playerStats').updateOne({name:previousWinner.orange[0]},{$inc:{ocap:1}},{upsert:true});
+            await Client.db().collection('playerStats').updateOne({name:previousWinner.purple[0]},{$inc:{pcap:1}},{upsert:true});
+
+        let newteams=team.map((el)=>{return({team:el,played:0,won:0,lost:0,draw:0,runs:0,points:0})});
         const newmonth=`${month[new Date().getMonth()]} - ${new Date().getFullYear()}`;
         const beforedata={month:newmonth,table:newteams,time:new Date()};
     
-        const precheck=await Client.db().collection('tournament').find({month:newmonth}).toArray();
+       
         await Client.db().collection('tournamentData').deleteMany({});
-       if(precheck.length==0){
-        await Client.db().collection('tournament').insertOne(beforedata);
-       }
+        await Client.db().collection('ManOfTheTournament').deleteMany({});
+        await Client.db().collection('topContributors0').deleteMany({});
+        await Client.db().collection('topContributors1').deleteMany({});
+        await Client.db().collection('fixtureOriginal').deleteMany({});
+
+        let data=await Client.db().collection('fixture').findOne({});
+        await Client.db().collection('fixtureOriginal').insertOne(data);
+        
+        await Client.db().collection('tournament').updateOne({month:beforedata.month},{$set:{...beforedata}},{upsert:true});
+
+
+        // month league reset
+        const today=new Date();
+        const monthVer=Number(""+today.getFullYear()+(today.getMonth()/2));
+        const prevcursor=await Client.db().collection('Monthrank').find({time:{$lt:monthVer}}).sort({score:-1}).limit(1);
+        const prevarrays=await prevcursor.toArray();
+        if(prevarrays.length>=1){
+            await Client.db().collection('winners').deleteMany({type:"month"});
+            prevarrays[0].type="month";
+            await Client.db().collection('winners').insertOne(prevarrays[0]);
+        }
+        await Client.db().collection('Monthrank').deleteMany({time:{$lt:monthVer}});
+
+
+
+
+
+
+        await Client.close();
+
+        }
+        if(new Date().getDate()==25){
+            const top4Teams=await Client.db().collection('tournament').aggregate([
+                {$match:{month:currentmonth}},
+                {
+                    $unwind: '$table'
+                  },
+                  {
+                    $sort: { 'table.points':-1,'table.runs':-1}
+                  }, {
+                    $group: {
+                      _id: '$_id',
+                      month:{$first:'$month'},
+                      table: {$push: '$table' }
+                    }
+                  }
+            ]).toArray();
+            console.log(top4Teams[0].table[0]);
+            await Client.db().collection('fixtureOriginal').updateOne({},{$set:{ '25':[{ team1: [top4Teams[0].table[0].team,0,0], team2: [top4Teams[0].table[1].team,0,0], won: '' ,mom:''}],'26':[{ team1: [top4Teams[0].table[2].team,0,0], team2: [top4Teams[0].table[3].team,0,0], won: '' ,mom:''}]}},{upsert:true});
+            await Client.close();
+            }
+        else if(new Date().getDate()==26){
+            const teamsForFinals=await Client.db().collection('fixtureOriginal').findOne({});
+            await Client.db().collection('fixtureOriginal').updateOne({},{$set:{'27':[{ team1: [teamsForFinals[25][0].won==teamsForFinals[25][0].team1[0]?teamsForFinals[25][0].team2[0]:teamsForFinals[25][0].team1[0],0,0], team2: ['TBD',0,0], won: '',mom:'' }],'28':[{ team1: [teamsForFinals[25][0].won,0,0], team2: ['TBD',0,0], won: '' ,mom:''}]}},{upsert:true});
+            await Client.close()
+        }
+        else if(new Date().getDate()==27){
+            const teamsForQualifier2=await Client.db().collection('fixtureOriginal').findOne({});
+            await Client.db().collection('fixtureOriginal').updateOne({},{$set:{'27':[{ team1: [teamsForQualifier2[25][0].won==teamsForQualifier2[25][0].team1[0]?teamsForQualifier2[25][0].team2[0]:teamsForQualifier2[25][0].team1[0],0,0], team2: [teamsForQualifier2[26][0].won,0,0], won: '',mom:'' }]}},{upsert:true});
+            await Client.close()
+            }
+        else if(new Date().getDate()==28){
+            const teamsForQualifier2=await Client.db().collection('fixtureOriginal').findOne({});
+            await Client.db().collection('fixtureOriginal').updateOne({},{$set:{'28':[{ team1: [teamsForQualifier2[25][0].won,0,0], team2: [teamsForQualifier2[27][0].won,0,0], won: '' }]}},{upsert:true});
+            await Client.close()
+        }
     }
     catch(e){
+        // console.log(e);
+    }
+    finally{
+        // console.log("ended");
         
     }
-    finally{
-        await Client.close();
-    }
-   
-
-   
-})
-
-
-/**For selecting teams for playoffs  ***/
-const playoffjob=nodeschedule.scheduleJob('0 0 0 20 * *',async()=>{
-    const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
-    try{
-    const currentmonth=`${month[new Date().getMonth()]} - ${new Date().getFullYear()}`;
-    const precheck=await Client.db().collection('tournament').findOne({month:currentmonth});
-    precheck.table.sort((a,b)=>{return b.runs-a.runs}).sort((a,b)=>{return(b.score-a.score)});
-   
-    const updatedPrecheck=precheck.table.map((e,ind)=>{
-        if(ind>3){
-            e.stage='E';
-            
-        }
-        else{
-            e.stage='P';
-        }
-        return e;
-    })
-
-    await Client.db().collection('tournament').updateOne({month:currentmonth},{$set:{table:precheck.table}});
-    }
-    catch(error){
-
-    }
-    finally{
-        await Client.close();
-    }
+ 
     
-
 })
 
-/**********For resetting the week league */
 
-const weekJob=nodeschedule.scheduleJob('0 0 0 * * 7',async()=>{
-    const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
 
-    try{
-        const cursordel=await Client.db().collection('weekrank').find({}).sort({score:-1}).limit(1).toArray();
-        const prevarrays={name:cursordel[0].name,score:cursordel[0].score,time:cursordel[0].time,type:"week"};
-        await Client.db().collection('winners').deleteMany({type:"week"});     
-        await Client.db().collection('winners').insertOne(prevarrays);
-        await Client.db().collection('weekrank').deleteMany({});
-    }
-   finally{
-    await Client.close();
-   }
+// For resetting the week league
 
-})
+
+// const weekJob=nodeschedule.scheduleJob('0 0 0 * * 7',async()=>{
+//     const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
+
+//     try{
+//         const cursordel=await Client.db().collection('weekrank').find({}).sort({score:-1}).limit(1).toArray();
+//         const prevarrays={name:cursordel[0].name,score:cursordel[0].score,time:cursordel[0].time,type:"week"};
+//         await Client.db().collection('winners').deleteMany({type:"week"});     
+//         await Client.db().collection('winners').insertOne(prevarrays);
+//         await Client.db().collection('weekrank').deleteMany({});
+//     }
+//    finally{
+//     await Client.close();
+//    }
+
+// })
+
+
+
