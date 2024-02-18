@@ -114,7 +114,7 @@ tournamentroutes.get('/:month',async(req,res)=>{
 })
 
 tournamentroutes.post('/contribute',async(req,res)=>{
-    console.log(playersCanContribute,req.body);
+    // console.log(playersCanContribute,req.body);
     if(playersCanContribute.indexOf(req.body.playerId)!=-1){
         if(req.body.data[2]<=200){
             const month=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];

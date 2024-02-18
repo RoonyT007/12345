@@ -18,11 +18,6 @@ module.exports.playersCanContribute=playersCanContribute;
 const leaderboardroutes=require('./leaderboard');
 const tournamentroutes=require('./tournament');
 
-const today=new Date();
-const custom=new Date(98,1);
-const monthVer=Number(""+today.getFullYear()+(today.getMonth()/2));
-const firstDay=new Date(today.getFullYear(),today.getMonth(),today.getDate()-today.getDay())
-const lastDay=new Date(today.getFullYear(),firstDay.getMonth(),firstDay.getDate()+6);
 
 const month=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const team=["Kolkata Knights","Mumbai Blasters","Chennai Warriors","Bangalore Strikers","Delhi Tigers","Punjab Panthers","Rajasthan Rulers","Lucknow Superstars","Gujarat Gaints","Hyderabad Hurricanes"];
@@ -462,7 +457,7 @@ const dailyjob=nodeschedule.scheduleJob(jobRule,async()=>{
     const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
     try{
        
-        if(new Date().getDate()<=28 && new Date().getDate()!=1){
+        if(new Date().getDate()<=28){
             
             let todayMatchData=await Client.db().collection('fixtureOriginal').findOne({});
             if(new Date().getDate()==1){
@@ -514,34 +509,15 @@ const dailyjob=nodeschedule.scheduleJob(jobRule,async()=>{
 
             const prevdate=new Date(new Date().getFullYear(),new Date().getMonth(),-2);
             const prevmonth=`${month[prevdate.getMonth()]} - ${prevdate.getFullYear()}`;
-            // new logic
-            // const winner=await Client.db().collection('fixtureOriginal').findOne({});
-            // winner!=null&&await Client.db().collection('tournament').findOneAndUpdate({month:"alltime",'table.team':winner[28].won},{$inc:{'table.$.cups':1}});
-
-            // old logic
-            const previousWinnerTeam=await Client.db().collection('tournament').findOne({month:prevmonth});
-            const winningTeam=previousWinnerTeam!=null&& previousWinnerTeam.table.reduce((maxTeam,currentTeam)=>{
-                if(maxTeam.score===currentTeam.score){
-                    return maxTeam.runs>currentTeam.runs?maxTeam:currentTeam;
-                }
-                else{
-                    return maxTeam.score>currentTeam.score?maxTeam:currentTeam;
-                }
-                
-            });
-            previousWinnerTeam!=null&&await Client.db().collection('tournament').findOneAndUpdate({month:"alltime",'table.team':winningTeam.team},{$inc:{'table.$.cups':1}});
-
+            const winner=await Client.db().collection('fixtureOriginal').findOne({});
+            winner!=null&&await Client.db().collection('tournament').findOneAndUpdate({month:"alltime",'table.team':winner[28][0].won},{$inc:{'table.$.cups':1}});
 
             
     
             const previousWinner=await Client.db().collection('tournament').findOne({month:prevmonth});
-             // old logic ends
-
-            // new logic
-            // await Client.db().collection('playerStats').updateOne({name:previousWinner.mot[0]},{$inc:{mot:1}},{upsert:true});
-             // new logic ends
 
 
+            await Client.db().collection('playerStats').updateOne({name:previousWinner.mot[0]},{$inc:{mot:1}},{upsert:true});
             await Client.db().collection('playerStats').updateOne({name:previousWinner.orange[0]},{$inc:{ocap:1}},{upsert:true});
             await Client.db().collection('playerStats').updateOne({name:previousWinner.purple[0]},{$inc:{pcap:1}},{upsert:true});
 
@@ -598,7 +574,6 @@ const dailyjob=nodeschedule.scheduleJob(jobRule,async()=>{
                     }
                   }
             ]).toArray();
-            console.log(top4Teams[0].table[0]);
             await Client.db().collection('fixtureOriginal').updateOne({},{$set:{ '25':[{ team1: [top4Teams[0].table[0].team,0,0], team2: [top4Teams[0].table[1].team,0,0], won: '' ,mom:''}],'26':[{ team1: [top4Teams[0].table[2].team,0,0], team2: [top4Teams[0].table[3].team,0,0], won: '' ,mom:''}]}},{upsert:true});
             await Client.close();
             }
@@ -619,10 +594,9 @@ const dailyjob=nodeschedule.scheduleJob(jobRule,async()=>{
         }
     }
     catch(e){
-        // console.log(e);
+
     }
     finally{
-        // console.log("ended");
         
     }
  
@@ -634,21 +608,21 @@ const dailyjob=nodeschedule.scheduleJob(jobRule,async()=>{
 // For resetting the week league
 
 
-// const weekJob=nodeschedule.scheduleJob('0 0 0 * * 7',async()=>{
-//     const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
+const weekJob=nodeschedule.scheduleJob('0 0 0 * * 7',async()=>{
+    const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
 
-//     try{
-//         const cursordel=await Client.db().collection('weekrank').find({}).sort({score:-1}).limit(1).toArray();
-//         const prevarrays={name:cursordel[0].name,score:cursordel[0].score,time:cursordel[0].time,type:"week"};
-//         await Client.db().collection('winners').deleteMany({type:"week"});     
-//         await Client.db().collection('winners').insertOne(prevarrays);
-//         await Client.db().collection('weekrank').deleteMany({});
-//     }
-//    finally{
-//     await Client.close();
-//    }
+    try{
+        const cursordel=await Client.db().collection('weekrank').find({}).sort({score:-1}).limit(1).toArray();
+        const prevarrays={name:cursordel[0]!=undefined?cursordel[0].name:'-',score:cursordel[0]!=undefined?cursordel[0].score:0,time:cursordel[0]!=undefined?cursordel[0].time:'-',type:"week"};
+        await Client.db().collection('winners').deleteMany({type:"week"});     
+        await Client.db().collection('winners').insertOne(prevarrays);
+        await Client.db().collection('weekrank').deleteMany({});
+    }
+   finally{
+    await Client.close();
+   }
 
-// })
+})
 
-
+ 
 
