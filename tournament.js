@@ -79,22 +79,27 @@ tournamentroutes.get('/:month',async(req,res)=>{
     }
     else if(req.params.month==="orange"){
         const data1=await Client.db().collection('tournamentData').find({}).project({runs:1,name:1}).sort({runs:-1}).limit(50).toArray();
+        await Client.close();
         res.status(200).json(data1);
     }
     else if(req.params.month==="purple"){
         const data1=await Client.db().collection('tournamentData').find({}).project({name:1,wickets:1}).sort({wickets:-1}).limit(50).toArray();
+        await Client.close();
         res.status(200).json(data1);
     }
     else if(req.params.month==="fixtures"){
         const data1=await Client.db().collection('fixtureOriginal').findOne({});
+        await Client.close();
         res.status(200).json(data1);
     }
     else if(req.params.month==="mot"){
         const data1=await Client.db().collection('ManOfTheTournament').find().project({name:1,points:1}).sort({points:-1}).limit(50).toArray();
+        await Client.close();
         res.status(200).json(data1);
     }
     else if(req.params.month==="topContributors1" || req.params.month==="topContributors0"){
         const data1=await Client.db().collection(req.params.month).find({}).project({points:1,name:1}).sort({points:-1}).limit(50).toArray();
+        await Client.close();
         res.status(200).json(data1);
     }
     else if(req.params.month=="playerstats"){

@@ -314,10 +314,11 @@ socket.on('run',(data)=>{
             Socket.sockets.in(p2.id).disconnectSockets();
             if(!(p1.friend_room.need===true||p1.friend_room.need===true)){
                 mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority')
-                .then(async(client)=>{await client.db().collection('rank').insertMany([{"name":p1.name,"score":p1.bat},{"name":p2.name,"score":p2.bat}]);
-                await client.db().collection('weekrank').insertMany([{"name":p1.name,"score":p1.bat,time:new Date()},{"name":p2.name,"score":p2.bat,time:new Date()}]);
-                await client.db().collection('Monthrank').insertMany([{"name":p1.name,"score":p1.bat,time:Number(""+new Date().getFullYear()+(new Date().getMonth()/2))},{"name":p2.name,"score":p2.bat,time:Number(""+new Date().getFullYear()+(new Date().getMonth()/2))}]);
-                await client.close();}).catch(err=>{})
+                .then(async(client)=>{
+                await client.db().collection('weekrank').updateOne({name:p1.bat>p2.bat?p1.name:p2.name},{$inc:{wins:1}},{upsert:true});
+                await client.db().collection('Monthrank').updateOne({name:p1.bat>p2.bat?p1.name:p2.name},{$inc:{wins:1}},{upsert:true});
+                await client.close();}).catch(err=>{
+                })
             }
             delete players[p1.id];
             delete players[p2.id];
@@ -539,22 +540,15 @@ const dailyjob=nodeschedule.scheduleJob(jobRule,async()=>{
 
 
         // month league reset
-        const today=new Date();
-        const monthVer=Number(""+today.getFullYear()+(today.getMonth()/2));
-        const prevcursor=await Client.db().collection('Monthrank').find({time:{$lt:monthVer}}).sort({score:-1}).limit(1);
-        const prevarrays=await prevcursor.toArray();
+        const prevarrays=await Client.db().collection('Monthrank').find({}).sort({wins:-1}).limit(1).toArray();
         if(prevarrays.length>=1){
             await Client.db().collection('winners').deleteMany({type:"month"});
             prevarrays[0].type="month";
             await Client.db().collection('winners').insertOne(prevarrays[0]);
+            await Client.db().collection('rank').updateOne({name:prevarrays[0].name},{$inc:{thirtyday:1}},{upsert:true});
+            
         }
-        await Client.db().collection('Monthrank').deleteMany({time:{$lt:monthVer}});
-
-
-
-
-
-
+        await Client.db().collection('Monthrank').deleteMany({});
         await Client.close();
 
         }
@@ -612,8 +606,12 @@ const weekJob=nodeschedule.scheduleJob('0 0 0 * * 7',async()=>{
     const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
 
     try{
-        const cursordel=await Client.db().collection('weekrank').find({}).sort({score:-1}).limit(1).toArray();
-        const prevarrays={name:cursordel[0]!=undefined?cursordel[0].name:'-',score:cursordel[0]!=undefined?cursordel[0].score:0,time:cursordel[0]!=undefined?cursordel[0].time:'-',type:"week"};
+        const cursordel=await Client.db().collection('weekrank').find({}).sort({wins:-1}).limit(1).toArray();
+        const prevarrays={name:cursordel[0]!=undefined?cursordel[0].name:'-',wins:cursordel[0]!=undefined?cursordel[0].wins:0,time:cursordel[0]!=undefined?cursordel[0].time:'-',type:"week"};
+        if(cursordel[0]!=undefined){
+            await Client.db().collection('rank').updateOne({name:cursordel[0].name},{$inc:{sevenday:1}},{upsert:true});
+        }
+       
         await Client.db().collection('winners').deleteMany({type:"week"});     
         await Client.db().collection('winners').insertOne(prevarrays);
         await Client.db().collection('weekrank').deleteMany({});
