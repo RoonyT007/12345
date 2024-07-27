@@ -1,0 +1,116 @@
+/* font size */
+h1{
+    font-size:36px ;
+    font-weight: 700;
+}
+h2{
+    font-size: 33px;
+    font-weight: 600;
+}
+h3{
+    font-size:28px;
+    font-weight:  600;
+ }
+ h4{
+    font-size: 26px;
+    font-weight: 500;
+ }
+ h5{
+    font-size: 24px;
+    font-weight: 500;
+ }
+ h6{
+    font-size: 22px;
+    font-weight: 500;
+ }
+ p,.p{
+    font-size: 16px;
+    font-weight: 300;
+ }
+ .smaller-p{
+    font-size: 15px;
+ }
+ span,.span{
+    font-size: 14px;
+ }
+ .smaller-span{
+    font-size: 13px;
+ }
+ .vsmaller-span{
+    font-size: 12px;
+ }
+ /*  */
+
+
+ /* radio input set */
+ .radio-set{
+    display: inline-flex;
+    gap: max(0.368vw, 3px);
+    cursor: pointer;
+}
+textarea{
+    resize: none;
+    font-size: 15px;
+    padding: max(0.588vw, 6px);
+    outline: none;
+    width: 100%;
+    border-radius: max(0.588vw,4px);
+}
+
+.d-flex{
+    display: flex;
+}
+.flex-direction-column{
+    flex-direction: column;
+}
+.flex-gap-15{
+    gap: max(1.103vw,12px);
+}
+.flex-gap-10{
+    gap: max(0.735vw,7px);
+}
+.flex-gap-5{
+    gap: max(0.368vw, 3px);
+}
+.justify-content-center{
+    justify-content: center;
+}
+.remove-margin-container-auto *{
+    margin: 0px;
+}
+
+ @media screen and (max-width:800px){
+    h1{
+        font-size: 33px;
+    }
+    h2{
+        font-size: 30px;
+    }
+    h3{
+       font-size:24px ;
+    }
+    h4{
+        font-size: 22px;
+    }
+    h5{
+        font-size: 19px;
+    }
+    h6{
+        font-size: 16px;
+    }
+    p,.p{
+        font-size: 14px;
+     }
+     .smaller-p{
+        font-size: 13px;
+     }
+     span,.span{
+        font-size: 12px;
+     }
+     .smaller-span{
+        font-size: 11px;
+     }
+     .vsmaller-span{
+        font-size: 10px;
+     }
+}

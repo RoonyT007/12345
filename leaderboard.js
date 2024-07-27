@@ -42,18 +42,19 @@ leaderboardroutes.get('/month',(req,res)=>{
 })});
 
 
+
 leaderboardroutes.post('/survey',async(req,res)=>{
     try{
         const obj={};
-        obj[req.body.data]=1;
+        obj[req.body.selectedOption]=1;
         const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
-        await Client.db().collection('survey').findOneAndUpdate({name:"emojis"},{$inc:obj});
-        req.body.text.length>3&&await Client.db().collection('survey').insertOne({feedback:req.body.text});
+        await Client.db().collection('survey').updateOne({name:"gamemode"},{$inc:obj},{upsert:true});
+        req.body.feedback.length>3&&await Client.db().collection('survey').insertOne({feedback:req.body.feedback});
         await Client.close();
         res.status(201).json({msg:"done"});
     }
    catch(e){
-
+    res.status(401).json({msg:"something went wrong"});
    }
 })
 
