@@ -11,6 +11,38 @@
     scrollbar-width:thin;
     scrollbar-color: #264653 #f4a361;
 }
+/* full screen */
+#full-screen-button{
+    position: absolute;
+    bottom: max(2.206vw,12px) ;
+    right:  max(2.206vw,12px) ;
+    width: max(2.941vw, 30px);
+    background: #ffffffe1;
+    border-radius: max(0.588vw,6px);
+    cursor: pointer;
+    z-index: 10;
+    border: 2px solid #f4a361;
+    transition: 0.3s all;
+}
+#full-screen-button:hover{
+    background-color:#f4a361;
+    scale: 1.1;
+}
+:-webkit-full-screen {
+    background-color: transparent;
+  }
+  
+  /* IE11 */
+  :-ms-fullscreen {
+    background-color: transparent;
+  }
+  
+  /* Standard syntax */
+  :fullscreen {
+    background-color: transparent;
+  }
+  
+  /* **** */
 
 .loader-container{
     position: absolute;
@@ -35,7 +67,9 @@
     animation: spin 2s infinite;
 }
 #higher-container{
+    position: relative;
     min-height: 100svh;
+    background-color:#fad7ba;
     border-bottom: 2px solid #264653;
 }
 #lower-container{
@@ -117,37 +151,10 @@ select,option{
     font:-moz-pull-down-menu;
 }
 body{
-    background-color:#f4a3616f;
+
     text-align: center;
 }
-h1{
-    font-size:39px ;
-    font-weight: 700;
-}
-h2{
-    font-size: 37px;
-    font-weight: 600;
-}
-h3{
-    font-size:34.8px;
-    font-weight:  600;
- }
- h4{
-    font-size: 32px;
-    font-weight: 500;
- }
- h5{
-    font-size: 26.4px;
-    font-weight: 500;
- }
- h6{
-    font-size: 22px;
-    font-weight: 500;
- }
- p{
-    font-size: 20px;
-    font-weight: 300;
- }
+
  .about-content p, .about-content li{
     font-family: 'Roboto', sans-serif;
     font-weight: 600;
@@ -185,35 +192,6 @@ h3{
  }
 
 @media screen and (max-width:800px){
-    h1{
-        font-size: 28px;
-        font-weight: 700;
-    }
-    h2{
-        font-size: 26px;
-        font-weight: 600;
-        
-    }
-    h3{
-       font-size:22px ;
-       font-weight: 500;
-    }
-    h4{
-        font-size: 20px;
-        font-weight: 500;
-    }
-    h5{
-        font-size: 16px;
-        font-weight: 300;
-    }
-    h6{
-        font-size: 14px;
-        font-weight: 300;
-    }
-    p{
-        font-size: 16px;
-        font-weight: 300;
-    }
     .about-content-2>h3{
         margin: 40px 0px 10px;
      }
@@ -221,3 +199,10 @@ h3{
         margin: 30px 0px 15px;
      }
 }
+@media screen and (max-width:620px){
+
+    #full-screen-button{
+        top: max(2.206vw,12px) ;
+        bottom: initial;
+    }
+    }
