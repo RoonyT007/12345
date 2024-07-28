@@ -11,15 +11,15 @@ h3{
     font-size:28px;
     font-weight:  600;
  }
- h4{
+ h4,.h4{
     font-size: 26px;
     font-weight: 500;
  }
- h5{
+ h5,.h5{
     font-size: 24px;
     font-weight: 500;
  }
- h6{
+ h6,.h6{
     font-size: 22px;
     font-weight: 500;
  }
@@ -89,13 +89,13 @@ textarea{
     h3{
        font-size:24px ;
     }
-    h4{
+    h4,.h4{
         font-size: 22px;
     }
-    h5{
+    h5,.h5{
         font-size: 19px;
     }
-    h6{
+    h6,.h6{
         font-size: 16px;
     }
     p,.p{
