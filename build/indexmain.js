@@ -13,7 +13,7 @@ window.addEventListener('load',()=>{
  
 
 function fullScreenFunc(){
-    if(document.fullscreen){
+    if(document.fullscreenElement || document.webkitFullscreenElement){
       if (document.exitFullscreen) {
         document.exitFullscreen();
       } else if (document.webkitExitFullscreen) { /* Safari */
@@ -24,9 +24,12 @@ function fullScreenFunc(){
       document.getElementById('full-screen-button').src='../svg/fullscreen.svg'
     }
     else{
+
       if (document.getElementById('higher-container').requestFullscreen) {
+
         document.getElementById('higher-container').requestFullscreen();
       } else if (document.getElementById('higher-container').webkitRequestFullscreen) { /* Safari */
+  
         document.getElementById('higher-container').webkitRequestFullscreen();
       } else if (document.getElementById('higher-container').msRequestFullscreen) { /* IE11 */
         document.getElementById('higher-container').msRequestFullscreen();

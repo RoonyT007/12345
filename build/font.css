@@ -1,43 +1,55 @@
 /* font size */
 h1{
-    font-size:36px ;
+    /* 36 */
+    font-size: max(2.368vw,34px);
     font-weight: 700;
 }
-h2{
-    font-size: 33px;
+h2,.h2{
+    /* 33 */
+    font-size:max(2.171vw,31px); 
     font-weight: 600;
 }
-h3{
-    font-size:28px;
+h3,.h3{
+    /* 30 */
+    font-size:max(1.974vw,28px);
     font-weight:  600;
  }
  h4,.h4{
-    font-size: 26px;
+    /* 27 */
+    font-size: max(1.776vw,25px);
     font-weight: 500;
  }
  h5,.h5{
-    font-size: 24px;
+    /* 24 */
+    font-size: max(1.579vw,22px);
     font-weight: 500;
  }
  h6,.h6{
-    font-size: 22px;
+    /* 22 */
+    font-size: max(1.447vw,20px);
     font-weight: 500;
  }
  p,.p{
-    font-size: 16px;
+    /* 18 */
+    font-size: max(1.184vw,16px);
     font-weight: 300;
  }
+
  .smaller-p{
-    font-size: 15px;
+     /* 16 */
+    font-size: max(1.053vw,15px);
  }
  span,.span{
-    font-size: 14px;
+    /* 15 */
+    font-size: max(0.987vw,14px);
  }
  .smaller-span{
-    font-size: 13px;
+    /* 14 */
+    font-size: max(0.921vw,13px);
  }
  .vsmaller-span{
-    font-size: 12px;
+    /* 13 */
+    font-size: max(0.855vw,12px);
  }
  /*  */
 
@@ -79,38 +91,74 @@ textarea{
     margin: 0px;
 }
 
- @media screen and (max-width:800px){
-    h1{
-        font-size: 33px;
+ @media screen and (max-width:900px){
+    h1,.h1{
+        font-size:max(3.778vw ,32px);
     }
-    h2{
-        font-size: 30px;
+    h2,.h2{
+        font-size:max( 3.444vw,29px);
     }
-    h3{
-       font-size:24px ;
+    h3,.h3{
+       font-size:max(3.111vw,26px);
     }
     h4,.h4{
-        font-size: 22px;
+        font-size:max( 2.778vw,23px);
     }
     h5,.h5{
-        font-size: 19px;
+        font-size:max( 2.444vw,20px);
     }
     h6,.h6{
-        font-size: 16px;
+        font-size:max( 2.222vw,18px);
     }
     p,.p{
-        font-size: 14px;
+        font-size: max(1.778vw,14px);
      }
      .smaller-p{
-        font-size: 13px;
+        font-size:max( 1.667vw,13px);
      }
      span,.span{
-        font-size: 12px;
+        font-size:max( 12px,1.556vw);
      }
      .smaller-span{
-        font-size: 11px;
+        font-size:max( 11px,1.444vw);
      }
      .vsmaller-span{
-        font-size: 10px;
+        font-size:max( 1.333vw ,10px);
+     }
+}
+
+@media screen and (max-width:600px){
+    h1,.h1{
+        font-size:max(5.333vw ,30px);
+    }
+    h2,.h2{
+        font-size:max( 4.833vw,27px);
+    }
+    h3,.h3{
+       font-size:max(4.333vw,24px);
+    }
+    h4,.h4{
+        font-size:max( 3.833vw,22px);
+    }
+    h5,.h5{
+        font-size:max( 3.333vw,18px);
+    }
+    h6,.h6{
+        font-size:max( 3vw,16px);
+    }
+    p,.p{
+        font-size: max(2.333vw,13px);
+     }
+     .smaller-p{
+        font-size:max( 2.167vw,12px);
+     }
+     span,.span{
+        font-size:max( 11px,2vw);
+     }
+     .smaller-span{
+        font-size:max( 10px,1.833vw);
+     }
+     .vsmaller-span{
+        font-size:max( 1.667vw ,9px);
      }
 }
