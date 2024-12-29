@@ -21,7 +21,7 @@ function fullScreenFunc(){
       } else if (document.msExitFullscreen) { /* IE11 */
         document.msExitFullscreen();
       }
-      document.getElementById('full-screen-button').src='../svg/fullscreen.svg'
+      document.getElementById('full-screen-button').src='../svg-public/fullscreen.svg'
     }
     else{
 
@@ -34,7 +34,7 @@ function fullScreenFunc(){
       } else if (document.getElementById('higher-container').msRequestFullscreen) { /* IE11 */
         document.getElementById('higher-container').msRequestFullscreen();
       }
-      document.getElementById('full-screen-button').src='../svg/exitfullscreen.svg'
+      document.getElementById('full-screen-button').src='../svg-public/exitfullscreen.svg'
     }
 
 }

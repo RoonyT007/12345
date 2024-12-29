@@ -1,5 +1,6 @@
 const express=require('express');
-const { playersCanContribute } = require('./index');
+const { playersCanContribute, rooms, emptyRooms } = require('./index');
+const { getMongodbClient } = require('./socket functions/databaseFunctions');
 
 
 const tournamentroutes=express.Router();
@@ -8,7 +9,8 @@ const mongodb=require('mongodb').MongoClient;
 tournamentroutes.get('/:month',async(req,res)=>{
     const month=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     const currentmonth=`${month[new Date().getMonth()]} - ${new Date().getFullYear()}`
-    const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
+
+    const Client= await getMongodbClient();
     if(req.params.month==="months"){
         const data1=await Client.db().collection('tournament').aggregate([
             {$match:{month:currentmonth}},
@@ -30,7 +32,6 @@ tournamentroutes.get('/:month',async(req,res)=>{
         ]).toArray();
         const data=await Client.db().collection('tournament').find().project({month:-1}).sort({time:-1}).toArray();
         const data2=await Client.db().collection('fixtureOriginal').findOne({});
-        await Client.close();
         res.status(200).json({data,data1:data1[0],fixture:data2,currentMonth:currentmonth,currentDate:new Date()});
     }
     else if(req.params.month==="current"){
@@ -51,7 +52,6 @@ tournamentroutes.get('/:month',async(req,res)=>{
                 }
               }
         ]).toArray();
-        await Client.close();
         res.status(200).json(data1[0]);
     }
     else if(req.params.month==="team_available"){
@@ -60,13 +60,11 @@ tournamentroutes.get('/:month',async(req,res)=>{
         if(data1!=null){
           let indianTime = new Date().toLocaleDateString("en-US", {timeZone: 'Asia/Kolkata'});
           filteredData=data1[indianTime.split('/')[1]>=28?28:indianTime.split('/')[1]];
-             await Client.close();
              res.status(200).json(filteredData);
         }
          // new logic  ends remove else block completely and just the if statment
         else{
           const data1=await Client.db().collection('tournament').find({month:currentmonth}).toArray();
-          await Client.close();
           const filteredData=data1[0].table.filter((e)=>{
               delete e.score;
               if(e.stage!="E"){
@@ -79,53 +77,46 @@ tournamentroutes.get('/:month',async(req,res)=>{
     }
     else if(req.params.month==="orange"){
         const data1=await Client.db().collection('tournamentData').find({}).project({runs:1,name:1}).sort({runs:-1}).limit(50).toArray();
-        await Client.close();
         res.status(200).json(data1);
     }
     else if(req.params.month==="purple"){
         const data1=await Client.db().collection('tournamentData').find({}).project({name:1,wickets:1}).sort({wickets:-1}).limit(50).toArray();
-        await Client.close();
         res.status(200).json(data1);
     }
     else if(req.params.month==="fixtures"){
         const data1=await Client.db().collection('fixtureOriginal').findOne({});
-        await Client.close();
         res.status(200).json(data1);
     }
     else if(req.params.month==="mot"){
         const data1=await Client.db().collection('ManOfTheTournament').find().project({name:1,points:1}).sort({points:-1}).limit(50).toArray();
-        await Client.close();
         res.status(200).json(data1);
     }
     else if(req.params.month==="topContributors1" || req.params.month==="topContributors0"){
         const data1=await Client.db().collection(req.params.month).find({}).project({points:1,name:1}).sort({points:-1}).limit(50).toArray();
-        await Client.close();
         res.status(200).json(data1);
     }
     else if(req.params.month=="playerstats"){
       const data=await Client.db().collection('playerStats').find({}).sort({mot:-1,ocap:-1,pcap:-1,mom:-1}).project({name:1,mot:1,ocap:1,pcap:1,mom:1}).limit(50).toArray();
-      await Client.close();
       res.status(200).json(data);
   
   }
     else{
         const data=await Client.db().collection('tournament').find({month:req.params.month}).toArray();
-        await Client.close();
         res.status(200).json(data[0]);
     
     }
 
-    
+
 })
 
 tournamentroutes.post('/contribute',async(req,res)=>{
-    // console.log(playersCanContribute,req.body);
+  console.log(playersCanContribute,Object.keys(rooms),emptyRooms);
     if(playersCanContribute.indexOf(req.body.playerId)!=-1){
         if(req.body.data[2]<=200){
             const month=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
         const currentmonth=`${month[new Date().getMonth()]} - ${new Date().getFullYear()}`;
    
-            const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
+            const Client= await getMongodbClient();
             const data1=await Client.db().collection('fixtureOriginal').findOne({});
     
             let indianTime = new Date().toLocaleDateString("en-US", {timeZone: 'Asia/Kolkata'});
@@ -148,7 +139,6 @@ tournamentroutes.post('/contribute',async(req,res)=>{
         const purple=await Client.db().collection('tournamentData').find({}).project({wickets:1,name:1}).sort({wickets:-1}).limit(1).toArray();
         const mot=await Client.db().collection('ManOfTheTournament').find({}).project({points:1,name:1}).sort({points:-1}).limit(1).toArray();
         await Client.db().collection('tournament').findOneAndUpdate({month:currentmonth},{$set:{orange:[orange[0].name,orange[0].runs],purple:[purple[0].name,purple[0].wickets],mot:[mot[0].name,mot[0].points]}});
-        await Client.close();
         }
         playersCanContribute.splice(playersCanContribute.indexOf(req.body.playerId),1);
         res.status(201).json({msg:"done"});

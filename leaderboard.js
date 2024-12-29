@@ -1,4 +1,5 @@
 const express=require('express');
+const { getMongodbClient } = require('./socket functions/databaseFunctions');
 
 
 const leaderboardroutes=express.Router();
@@ -7,28 +8,24 @@ const mongodb=require('mongodb').MongoClient;
 
 
 
-leaderboardroutes.get('/alltime',(req,res)=>{
-    mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority').then(async(Client)=>{
-        await Client.connect();
+leaderboardroutes.get('/alltime',async (req,res)=>{
+        const Client=await getMongodbClient();
         const cursorarray=await Client.db().collection('rank').find({}).sort({thirtyday:-1,sevenday:-1}).toArray();
         res.json({rank:cursorarray,winner:cursorarray[0]===undefined?{name:"TBD"}:cursorarray[0]});
-        await Client.close();
-    })
+   
 });
 leaderboardroutes.get('/week',async(req,res)=>{
-    const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
+    const Client=await getMongodbClient();
     const concursor=await Client.db().collection('weekrank').find({}).sort({wins:-1}).toArray();  
     let prevwinner=await Client.db().collection('winners').find({type:"week"},{_id:0}).toArray();
     prevwinner=prevwinner.length===0?{name:"TBD"}:prevwinner[0];
     res.json({rank:concursor,winner:prevwinner,currentDate:new Date()});
-    await Client.close();
-        
         
     });
 
-leaderboardroutes.get('/month',(req,res)=>{
-   
-    mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority').then(async(Client)=>{Client.connect();
+leaderboardroutes.get('/month',async (req,res)=>{
+
+        const Client=await getMongodbClient();
         const arrays=await Client.db().collection('Monthrank').find({}).sort({wins:-1}).toArray();
      
         let prevwinner=await Client.db().collection('winners').find({type:"month"},{_id:0}).toArray();
@@ -37,10 +34,8 @@ leaderboardroutes.get('/month',(req,res)=>{
         
         res.json({rank:arrays,winner:prevwinner,currentDate:new Date()});
 
-        await Client.close();
 
-})});
-
+});
 
 
 leaderboardroutes.post('/survey',async(req,res)=>{
