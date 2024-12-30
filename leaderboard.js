@@ -42,7 +42,7 @@ leaderboardroutes.post('/survey',async(req,res)=>{
     try{
         const obj={};
         obj[req.body.selectedOption]=1;
-        const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
+        const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/tests?retryWrites=true&w=majority');
         await Client.db().collection('survey').updateOne({name:"gamemode"},{$inc:obj},{upsert:true});
         req.body.feedback.length>3&&await Client.db().collection('survey').insertOne({feedback:req.body.feedback});
         await Client.close();

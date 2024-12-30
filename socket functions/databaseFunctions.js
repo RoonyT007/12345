@@ -4,7 +4,7 @@ const mongoDb={client:'',connection:false};
 
 async function connectToMongoDb(){
     if(!mongoDb.connection){
-        mongoDb.client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
+        mongoDb.client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/tests?retryWrites=true&w=majority');
         mongoDb.connection=true;
         mongoDb.client.on('connectionClosed',()=>{
             mongoDb.connection=false;

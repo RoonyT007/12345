@@ -195,7 +195,7 @@ const dailyjob=nodeschedule.scheduleJob(jobRule,async()=>{
     const indianTime = today.toLocaleDateString("en-US", {timeZone: 'Asia/Kolkata'});
     let prevIndianDate=indianTime.split('/')[1];
     const currentmonth=`${month[new Date().getMonth()]} - ${new Date().getFullYear()}`;
-    const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
+    const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/tests?retryWrites=true&w=majority');
     try{
        
         if(new Date().getDate()<=28){
@@ -343,7 +343,7 @@ const dailyjob=nodeschedule.scheduleJob(jobRule,async()=>{
 
 
 const weekJob=nodeschedule.scheduleJob('0 0 0 * * 7',async()=>{
-    const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/mern?retryWrites=true&w=majority');
+    const Client= await mongodb.connect('mongodb+srv://manwithaplan:PRHhihJRqsnuyk5K@cluster0.mqbmipa.mongodb.net/tests?retryWrites=true&w=majority');
 
     try{
         const cursordel=await Client.db().collection('weekrank').find({}).sort({wins:-1}).limit(1).toArray();
